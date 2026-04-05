@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Arkia v173</title>
+<title>Arkia v176</title>
 <style>
 :root{--bg:#f6f8fc;--card:#ffffff;--line:#e5e7eb;--text:#111827;--muted:#6b7280;--soft:#f3f4f6;--accent-soft:#eef2ff;--manual:#e5e7eb;--danger:#b91c1c;--ok:#065f46;}
 *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif}
@@ -75,6 +75,7 @@
 .chipbox.full{grid-column:1/-1}
 .value-area{min-height:44px;display:flex;flex-direction:column;justify-content:center;gap:4px}
 .display-value{font-size:14px;font-weight:800;cursor:pointer;user-select:none}.calc-hint{font-size:10px;color:var(--muted)}
+.stay-two-col{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:start;direction:rtl}.stay-col{min-width:0;display:flex;flex-direction:column;gap:6px}.stay-col-label{font-size:10px;color:var(--muted);line-height:1.1;white-space:nowrap}.stay-col-value{font-size:14px;font-weight:800;line-height:1}.stay-col-hours{text-align:right}.stay-col-pay{text-align:left}.stay-col-pay .display-value,.stay-col-hours .stay-col-value{font-size:14px;font-weight:800;line-height:1}.stay-col-pay .display-value{cursor:pointer}
 .edit-row{display:flex;gap:6px;align-items:center}.edit-input{flex:1;border:1px solid #cbd5e1;border-radius:10px;background:#fff;padding:8px 10px;font-size:13px;font-weight:700;text-align:center}
 .edit-input.invalid{border-color:var(--danger);background:#fef2f2}
 .mini-btn{width:auto;border:1px solid var(--line);border-radius:10px;background:#fff;padding:8px 10px;font-size:12px;font-weight:700;cursor:pointer}
@@ -2204,6 +2205,19 @@ function getFlightActivityDaysForDisplay(month, flightId){
   }
   return 0;
 }
+
+function getFlightStayDurationDisplay(month, flightId){
+  const flights = getFlightsInLogicalSequence(month);
+  for (let idx = 0; idx < flights.length; idx += 1) {
+    const current = flights[idx];
+    ensureFlightShape(current);
+    if (String(current.id) !== String(flightId)) continue;
+    const prevFlight = idx > 0 ? flights[idx - 1] : null;
+    const nextFlight = idx < flights.length - 1 ? flights[idx + 1] : null;
+    return toHHMM(calculateStayDurationMinutes(current, prevFlight, nextFlight));
+  }
+  return '00:00';
+}
 function applyCalculatedValue(part, value){ if (part && !isManual(part)) part.calc = value; }
 function forceDerivedCalculatedValue(part, value){ if (!part) return; part.manual = ''; part.calc = value; }
 function ensureFlightShape(f){
@@ -2615,16 +2629,32 @@ function renderEditablePart(monthName, flightId, key, part){
   const editing = ui.editing === draftKey(flightId,key);
   const display = finalValue(part);
   const invalid = editing && ((part.type==='time' && getDraft(flightId,key,display) && !isValidTime(getDraft(flightId,key,display))) || (part.type==='number' && getDraft(flightId,key,display) && !isValidNumber(getDraft(flightId,key,display))));
+  const month = model.months.find(m=>m.monthName===monthName);
+  const flight = month?.flights.find(f=>f.id===flightId);
   const isShabbat = key === 'shabbat';
+  const isStay = key === 'stay';
+  const isStayRoute = isStay && normalizeRouteKey(flight?.route) === 'stay';
+  const stayDualLayout = isStayRoute ? `
+            <div class="stay-two-col">
+              <div class="stay-col stay-col-hours">
+                <div class="stay-col-label">סהכ שעות שהייה</div>
+                <div class="stay-col-value">${escapeHtml(getFlightStayDurationDisplay(month, flightId))}</div>
+              </div>
+              <div class="stay-col stay-col-pay">
+                <div class="stay-col-label">תשלום שהייה</div>
+                <div class="display-value" onclick="startEdit('${flightId}','${key}', month.flights.find(f=>f.id==='${flightId}').parts['${key}'])">${escapeHtml(display)}</div>
+              </div>
+            </div>` : '';
   const shabbatToggle = isShabbat ? `
         <label class="shabbat-toggle-inline" onclick="event.stopPropagation()">
-          <input type="checkbox" ${!isManual(part) && model.months.find(m=>m.monthName===monthName)?.flights.find(f=>f.id===flightId)?.manualShabbat ? 'checked' : ''} onchange="toggleManualShabbat('${monthName}','${flightId}',this.checked)">
+          <input type="checkbox" ${!isManual(part) && flight?.manualShabbat ? 'checked' : ''} onchange="toggleManualShabbat('${monthName}','${flightId}',this.checked)">
           <span>חג/שבת</span>
         </label>` : '';
+  const topLabel = isStayRoute ? '' : `<div class="k ${isShabbat ? 'shabbat-k-row' : ''}">${isShabbat ? `<span>${part.label}</span>${shabbatToggle}` : part.label}</div>`;
   return `
     <div class="chipbox ${isManual(part)?'manual':''}">
       ${isManual(part) ? '<div class="manual-mark">manual</div>' : ''}
-      <div class="k ${isShabbat ? 'shabbat-k-row' : ''}">${isShabbat ? `<span>${part.label}</span>${shabbatToggle}` : part.label}</div>
+      ${topLabel}
       <div class="value-area">
         ${editing ? `
           <div class="edit-row">
@@ -2633,7 +2663,7 @@ function renderEditablePart(monthName, flightId, key, part){
             <button class="mini-btn" type="button" onclick="cancelEdit('${flightId}','${key}')">בטל</button>
           </div>
         ` : `
-          <div class="display-value" onclick="startEdit('${flightId}','${key}', model.months.find(m=>m.monthName==='${escapeJs(monthName)}').flights.find(f=>f.id==='${flightId}').parts['${key}'])">${escapeHtml(display)}</div>
+          ${isStayRoute ? stayDualLayout : `<div class="display-value" onclick="startEdit('${flightId}','${key}', month.flights.find(f=>f.id==='${flightId}').parts['${key}'])">${escapeHtml(display)}</div>`}
           <div class="calc-hint">מחושב: ${escapeHtml(String(part.calc))}</div>
         `}
       </div>
