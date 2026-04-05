@@ -2017,20 +2017,32 @@ function calculateStayActivityDays(prev, next){
   const diffDays = getCalendarDayDiff(prev.date, next.date);
   return Math.max(0, diffDays - 1);
 }
+function flightCreatesNextActivityDay(f){
+  const g = lastDep(f);
+  const h = lastArr(f);
+  const e = isValidTime(f.dep1) ? f.dep1 : '';
+  if (isValidTime(g) && isValidTime(h) && toMinutes(g) > toMinutes(h) && toMinutes(h) >= toMinutes(EXCEL_OVERNIGHT_SPLIT)) return true;
+  if (isValidTime(e) && isValidTime(g) && isValidTime(h) && toMinutes(e) > toMinutes(g) && toMinutes(h) >= toMinutes(EXCEL_OVERNIGHT_SPLIT)) return true;
+  return false;
+}
 function calculateActivityIncrement(f, prev, next, standbyL){
   const curr = normalizeRouteKey(f.route);
+  const prevRoute = normalizeRouteKey((prev||{}).route);
   const prevDate = (prev||{}).date || '';
   const currDate = f.date || '';
   const g = lastDep(f);
   const h = lastArr(f);
-  const e = isValidTime(f.dep1) ? f.dep1 : '';
+  const currentIsFlightRoute = routeIsActivity(curr);
+  const prevIsFlightRoute = routeIsActivity(prevRoute);
+  const hasOvernightExtraDay = currentIsFlightRoute && flightCreatesNextActivityDay(f);
   if (curr === 'stay') return calculateStayActivityDays(prev, next);
   if (!currDate || curr === 'sic' || curr === 'vec' || curr === 'canc' || curr === 'mil') return 0;
   if (curr === 'sby' && standbyL < 4) return 0;
   if (curr === 'sby' && standbyL > 3) return 1;
-  if (currDate === prevDate && (toMinutes(hhmmOrZero(h)) < toMinutes(EXCEL_OVERNIGHT_SPLIT) || (isValidTime(g)&&isValidTime(h)&&toMinutes(h)>toMinutes(g)))) return 0;
-  if (isValidTime(g) && isValidTime(h) && toMinutes(g)>toMinutes(h) && toMinutes(h)>=toMinutes(EXCEL_OVERNIGHT_SPLIT) && currDate !== prevDate) return 2;
-  if (isValidTime(e) && isValidTime(g) && isValidTime(h) && toMinutes(e)>toMinutes(g) && toMinutes(h)>=toMinutes(EXCEL_OVERNIGHT_SPLIT) && currDate !== prevDate) return 2;
+  if (currentIsFlightRoute && prevIsFlightRoute && currDate === prevDate && !hasOvernightExtraDay) return 0;
+  if (hasOvernightExtraDay && currDate !== prevDate) return 2;
+  if (currentIsFlightRoute && prevIsFlightRoute && currDate === prevDate && hasOvernightExtraDay) return 1;
+  if (currDate === prevDate && toMinutes(hhmmOrZero(h)) < toMinutes(EXCEL_OVERNIGHT_SPLIT)) return 0;
   return 1;
 }
 function calculateDaysBCalc(f, cumulativeDays, stayPayMinutes, standbyL){
