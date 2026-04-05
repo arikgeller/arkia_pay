@@ -299,7 +299,6 @@
 @media (max-width:720px){
   .login-screen{align-items:flex-start;padding:12px 12px calc(20px + env(safe-area-inset-bottom));}
   .login-card{margin-top:max(12px, env(safe-area-inset-top)); max-height:calc(100dvh - 24px - env(safe-area-inset-top) - env(safe-area-inset-bottom)); overflow:auto;}
-  .login-card .input{font-size:16px}
   .mobile-picker{display:block}
   .desktop-datalist{display:none}
 }
@@ -2547,6 +2546,12 @@ function getMonthBasePayableMoney(month){
 function getMonthOnTopMoney(month){
   return (getMonthOnTopMinutes(month) / 60) * getEffectiveHourlyRate();
 }
+function getMonthFinalSalaryMoney(month){
+  const totalFixMins = totalByPart(month,'fix');
+  const totalStayMins = totalByPart(month,'stay');
+  const baseHoursAndStayMoney = ((totalFixMins + totalStayMins) / 60) * getEffectiveHourlyRate();
+  return Math.max(getEffectiveMinimumEmploymentIls(), baseHoursAndStayMoney) + getMonthOnTopMoney(month);
+}
 function refreshMonthMeta(month){
   month.flightsCount = month.flights.filter(f=>routeIsActivity(f.route)).length;
   const standbyDateSet = new Set();
@@ -2572,17 +2577,14 @@ function refreshMonthMeta(month){
 function recomputeMonthComp(month){
   recomputeMonthEshel(month);
   const totalFixMins = totalByPart(month,'fix');
+  const totalStayMins = totalByPart(month,'stay');
   const basePayableMins = getMonthBasePayableMinutes(month);
   const onTopMins = getMonthOnTopMinutes(month);
   month.baseHours = toHHMM(totalFixMins);
   month.payableHours = toHHMM(basePayableMins);
   month.onTopHours = toHHMM(onTopMins);
   month.totalSalaryHours = toHHMM(basePayableMins + onTopMins);
-  const effectiveHourlyRate = getEffectiveHourlyRate();
-  const effectiveMinimumEmploymentIls = getEffectiveMinimumEmploymentIls();
-  const basePayMoney = (basePayableMins/60) * effectiveHourlyRate;
-  const onTopMoney = (onTopMins/60) * effectiveHourlyRate;
-  month.finalSalaryIls = Math.max(effectiveMinimumEmploymentIls, basePayMoney) + onTopMoney;
+  month.finalSalaryIls = getMonthFinalSalaryMoney(month);
 }
 function getFlightDateNumber(dateStr){
   const m = String(dateStr||'').match(/^(\d{1,2})\.(\d{1,2})$/);
@@ -2923,7 +2925,7 @@ function renderMonth(month){
         <div class="month-pill">${totalBlock(month)}</div>
         <div class="month-pill">${getMonthTotalSalaryHours(month)}</div>
         <div class="month-pill">${getMonthBasePayableHours(month)}</div>
-        <div class="month-pill">${formatIls(month.finalSalaryIls)}</div>
+        <div class="month-pill">${formatIls(getMonthFinalSalaryMoney(month))}</div>
         <div class="toggle" onclick="toggleMonth('${month.monthName}')">${ui.openMonths[month.monthName] ? '⌃' : '⌄'}</div>
       </div>
       <div class="details ${ui.openMonths[month.monthName] ? '' : 'collapsed'}">
@@ -2962,7 +2964,7 @@ function renderMonth(month){
             <div class="summary-box"><div class="k">מינימום משרה</div><div class="v">${formatIls(getEffectiveMinimumEmploymentIls())}</div></div>
             <div class="summary-box"><div class="k">On Top</div><div class="v">${formatIls(getMonthOnTopMoney(month))}</div></div>
             <div class="summary-box"><div class="k">שעות לתשלום</div><div class="v">${getMonthBasePayableHours(month)}</div></div>
-            <div class="summary-box summary-total"><div class="k">סה״כ שכר</div><div class="v">${formatIls(month.finalSalaryIls)}</div></div>
+            <div class="summary-box summary-total"><div class="k">סה״כ שכר</div><div class="v">${formatIls(getMonthFinalSalaryMoney(month))}</div></div>
           </div>
         </div>
         <div class="card" style="padding-top:10px;margin-bottom:0">
@@ -2973,7 +2975,7 @@ function renderMonth(month){
               <div class="flight">
                 <div class="flight-row">
                   <div class="date">${escapeHtml(f.date)}</div>
-                  <div class="route-wrap"><div class="route">${escapeHtml(f.route)}</div><div class="sub">${escapeHtml([f.subtitle, f.aircraft ? 'A/C ' + f.aircraft : '', containsDhNote(f.note) ? 'DH' : '', usesMonthlySequenceOrdering(month.monthName) ? 'מס׳ ' + String(getFlightSequenceNumber(f, 0)) : 'שורה ' + String(f.row)].filter(Boolean).join(' · '))}</div></div>
+                  <div class="route-wrap"><div class="route">${escapeHtml(f.route)}</div><div class="sub">${escapeHtml([f.subtitle, f.aircraft ? 'A/C ' + f.aircraft : '', containsDhNote(f.note) ? 'DH' : ''].filter(Boolean).join(' · '))}</div></div>
                   <div class="times">${escapeHtml(f.times)}</div>
                   <div class="pay">${escapeHtml(String(getFlightEshelTotalDays(f)))}</div>
                   <div class="pay">${escapeHtml(String(getFlightActivityDaysForDisplay(month, f.id)))}</div>
@@ -4928,8 +4930,6 @@ function findLoginProfile(username){
   }) || null;
 }
 async function submitLogin(){
-  const activeEl = document.activeElement;
-  if (activeEl && typeof activeEl.blur === 'function') activeEl.blur();
   const username = String(document.getElementById('loginUsername')?.value || '').trim();
   const password = String(document.getElementById('loginPassword')?.value || '').trim();
   const profile = findLoginProfile(username);
@@ -4939,7 +4939,6 @@ async function submitLogin(){
   }
   CLOUD_APP_ID = profile.appId;
   setLoginError('');
-  window.scrollTo(0, 0);
   document.getElementById('loginScreen')?.classList.add('login-hidden');
   await bootCloud();
 }
