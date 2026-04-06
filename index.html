@@ -5,15 +5,18 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Arkia v176</title>
 <style>
-:root{--bg:#f6f8fc;--card:#ffffff;--line:#e5e7eb;--text:#111827;--muted:#6b7280;--soft:#f3f4f6;--accent-soft:#eef2ff;--manual:#e5e7eb;--danger:#b91c1c;--ok:#065f46;}
-*{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif}
-.app{max-width:980px;width:100%;margin:0 auto;padding:12px 12px 72px;overflow-x:hidden}
-.topbar{position:sticky;top:0;z-index:5;background:linear-gradient(to bottom,var(--bg) 82%, rgba(246,248,252,0));padding-bottom:8px}
+:root{--bg:#e9f0f8;--card:#ffffff;--line:#d2deec;--text:#102033;--muted:#60758d;--soft:#eef5fb;--accent-soft:#e6f0fb;--manual:#e8edf3;--danger:#b91c1c;--ok:#065f46;--brand:#1b7fc7;--brand-strong:#0d3558;--brand-soft:#d7ebff;--brand-glow:rgba(27,127,199,.18);--hero:#f7fbff;--hero-2:#dcecff;--highlight:#ffca5c;}
+*{box-sizing:border-box} body{margin:0;background:
+radial-gradient(circle at top right,rgba(27,127,199,.12) 0%, rgba(27,127,199,0) 24%),
+linear-gradient(180deg,#f7fbff 0%, #eef4fb 18%, #e9f0f8 100%);
+color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif}
+.app{max-width:1120px;width:100%;margin:0 auto;padding:14px 14px 84px;overflow-x:hidden}
+.topbar{position:sticky;top:0;z-index:5;background:linear-gradient(to bottom,rgba(247,251,255,.96) 0%, rgba(232,240,248,.92) 70%, rgba(233,240,248,0) 100%);backdrop-filter:blur(14px);padding:14px 0 12px}
 .topbar-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
 .header-copy{min-width:0;flex:1}
 .system-admin{position:relative;flex:0 0 auto}
 .system-admin[open]{z-index:20}
-.system-admin-btn{list-style:none;display:flex;align-items:center;justify-content:center;width:42px;height:42px;border:1px solid var(--line);border-radius:12px;background:#fff;cursor:pointer;font-size:20px;box-shadow:0 6px 16px rgba(15,23,42,.08)}
+.system-admin-btn{list-style:none;display:flex;align-items:center;justify-content:center;width:46px;height:46px;border:1px solid #d9e6f3;border-radius:16px;background:linear-gradient(180deg,#ffffff 0%, #edf6ff 100%);color:var(--brand-strong);cursor:pointer;font-size:20px;box-shadow:0 14px 30px rgba(17,104,177,.14)}
 .system-admin-btn::-webkit-details-marker{display:none}
 .system-admin-panel{position:absolute;top:50px;left:0;width:min(320px, calc(100vw - 32px));background:#fff;border:1px solid var(--line);border-radius:16px;padding:12px;box-shadow:0 18px 40px rgba(15,23,42,.14)}
 .system-admin-title{font-size:14px;font-weight:900;margin-bottom:4px}
@@ -26,10 +29,11 @@
 .system-admin-hint{font-size:11px;color:var(--muted);line-height:1.4;margin-top:10px}
 .system-admin-status{font-size:11px;color:var(--ok);font-weight:800;min-height:16px;margin-top:8px}
 .hidden-file-input{display:none}
-.title{font-size:24px;font-weight:800;margin:2px 0 6px}.subtitle{font-size:13px;color:var(--muted);margin-bottom:10px}
-.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:12px;box-shadow:0 8px 22px rgba(16,24,40,.04);margin-bottom:12px}
+.title{font-size:31px;font-weight:950;letter-spacing:-0.04em;color:var(--brand-strong);margin:0 0 6px}
+.subtitle{font-size:13px;color:#58708a;margin-bottom:12px;max-width:700px}
+.card{background:linear-gradient(180deg,#ffffff 0%, #fbfdff 100%);border:1px solid rgba(210,222,236,.96);border-radius:24px;padding:14px;box-shadow:0 22px 48px rgba(10,25,42,.08);margin-bottom:14px}
 .badges{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
-.badge{display:inline-flex;align-items:center;padding:4px 8px;border-radius:999px;background:#fff;border:1px solid var(--line);color:var(--muted);font-size:11px;font-weight:700}
+.badge{display:inline-flex;align-items:center;padding:6px 11px;border-radius:999px;background:linear-gradient(180deg,#ffffff 0%, #edf6ff 100%);border:1px solid #d8e5f3;color:var(--brand-strong);font-size:11px;font-weight:900;letter-spacing:.01em}
 .note{font-size:12px;color:var(--muted);line-height:1.45}
 .workspace-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
 .panel-title{font-size:13px;font-weight:800;margin-bottom:8px}
@@ -42,8 +46,8 @@
 .date-input-ltr{direction:ltr;text-align:left}
 .input.invalid{border-color:var(--danger);background:#fef2f2}
 .actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
-.btn{border:1px solid var(--line);background:#fff;border-radius:10px;padding:8px 10px;font-size:12px;font-weight:700;cursor:pointer}
-.btn.primary{background:#111827;color:#fff;border-color:#111827}.btn.soft{background:var(--soft)}
+.btn{border:1px solid #d7e4f0;background:linear-gradient(180deg,#ffffff 0%, #f7fbff 100%);border-radius:14px;padding:9px 12px;font-size:12px;font-weight:900;cursor:pointer;color:var(--brand-strong)}
+.btn.primary{background:linear-gradient(135deg,#1fa2ee 0%, #1678c2 54%, #0d3558 100%);color:#fff;border-color:#126caa}.btn.soft{background:linear-gradient(180deg,#f8fbff 0%, #edf4fb 100%)}
 .success{font-size:11px;color:var(--ok);margin-top:8px;font-weight:700}
 .collapsed{display:none}
 .month-row-header,.month-row{display:grid;grid-template-columns:minmax(0,1fr) 72px 88px 108px 78px 28px;gap:8px;align-items:center}
@@ -60,7 +64,7 @@
 .summary-box{background:#fff;border:1px solid var(--line);border-radius:14px;padding:10px}
 .summary-box .k{font-size:11px;color:var(--muted);margin-bottom:4px}.summary-box .v{font-size:18px;font-weight:800}
 .summary-box.alert{background:#fef2f2;border-color:#fecaca}.summary-box.alert .k,.summary-box.alert .v{color:#b91c1c}
-.summary-total{grid-column:1/-1;background:#111827;color:#fff;border-color:#111827}.summary-total .k{color:#d1d5db}.summary-total .v{font-size:20px}
+.summary-total{grid-column:1/-1;background:linear-gradient(135deg,#0b3557 0%, #1168b1 45%, #22a6f2 100%);color:#fff;border-color:#0b3557;box-shadow:0 16px 36px rgba(17,104,177,.28)}.summary-total .k{color:#e3f2ff}.summary-total .v{font-size:20px;color:#000}
 .list-header,.flight-row{display:grid;grid-template-columns:52px minmax(0,1fr) 92px 54px 54px 58px 74px 28px;gap:8px;align-items:center}
 .list-header{padding:0 6px 8px;font-size:10px;color:var(--muted);font-weight:700}
 .list-header>div{text-align:center}.list-header>div:nth-child(2){text-align:right}
@@ -84,6 +88,7 @@
 .manual-mark{position:absolute;top:8px;left:8px;font-size:10px;color:#4b5563;background:#fff;border:1px solid #d1d5db;border-radius:999px;padding:2px 6px}
 .chipbox.total{grid-column:1/-1;background:#eef2ff}.toolbar{display:flex;gap:8px;flex-wrap:wrap}
 .tech-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.flight-tech-title{font-size:13px !important;font-weight:800 !important;color:var(--text) !important;margin-bottom:8px}
 
 .tech-identity-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,.5fr) minmax(0,.5fr);gap:8px;direction:ltr;grid-column:1/-1;align-items:end}
 .tech-identity-row .field{min-width:0}
@@ -103,6 +108,22 @@
   .tech-identity-row .field.aircraft-field .input,.tech-identity-row .field.sequence-field .input{min-height:44px;padding:9px 10px;font-size:12px}
   .tech-sequence-input{font-size:10px;padding:9px 6px}
   .tech-dh-label{min-height:44px;padding:0 6px;font-size:11px;gap:6px}
+  #payrollScreen .tech-grid{
+    grid-template-columns:1fr 1fr;
+    gap:8px;
+  }
+  #payrollScreen .tech-grid > .field:not(.time-pair):not(.change-field){
+    grid-column:1 / -1;
+  }
+  #payrollScreen .tech-grid > .field.change-field{
+    grid-column:1 / -1;
+  }
+  #payrollScreen .tech-grid .time-pair{
+    grid-column:auto;
+  }
+  #payrollScreen .tech-grid .time-pair .input{
+    min-height:44px;
+  }
 }
 
 @media (max-width:680px){
@@ -141,8 +162,8 @@
 }
 
 .view-switch{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
-.view-switch .btn{min-width:120px}
-.btn.ghost.active{background:var(--text);color:#fff;border-color:var(--text)}
+.view-switch .btn{min-width:132px}
+.btn.ghost.active{background:linear-gradient(135deg,#0b3557 0%, #1168b1 52%, #1ea1ed 100%);color:#fff;border-color:#0b3557;box-shadow:0 14px 30px rgba(17,104,177,.24)}
 .screen-hidden{display:none!important}
 .logbook-shell{margin-top:12px;direction:ltr}
 .logbook-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}
@@ -180,6 +201,11 @@
 .logbook-table th,.logbook-table td{padding:8px 6px;border-bottom:1px solid var(--line);text-align:center;white-space:nowrap;font-size:11px}
 .logbook-table th{position:sticky;top:0;background:#f8fafc;font-weight:800;z-index:1}
 .logbook-table tbody tr:hover td{background:#fafcff}
+.logbook-table tbody tr.logbook-month-band-odd td{background:#ffffff}
+.logbook-table tbody tr.logbook-month-band-even td{background:#eef6ff}
+.logbook-table tbody tr.logbook-month-start td{border-top:8px solid #dfeafb}
+.logbook-table tbody tr.logbook-month-band-odd:hover td{background:#f8fbff}
+.logbook-table tbody tr.logbook-month-band-even:hover td{background:#e4f0fd}
 .logbook-table .left{text-align:left}
 .logbook-empty{padding:20px;text-align:center;color:var(--muted)}
 .logbook-caption{margin-top:10px;font-size:12px;color:var(--muted)}
@@ -299,6 +325,7 @@
 @media (max-width:720px){
   .login-screen{align-items:flex-start;padding:12px 12px calc(20px + env(safe-area-inset-bottom));}
   .login-card{margin-top:max(12px, env(safe-area-inset-top)); max-height:calc(100dvh - 24px - env(safe-area-inset-top) - env(safe-area-inset-bottom)); overflow:auto;}
+  .login-card .input{font-size:16px}
   .mobile-picker{display:block}
   .desktop-datalist{display:none}
 }
@@ -306,23 +333,26 @@
 
 /* v143 payroll-only visual upgrade, built to keep rollback to v141 simple */
 #payrollScreen .workspace-grid{
-  gap:16px;
+  gap:18px;
   align-items:start;
 }
 
 #payrollScreen .form-card{
-  border-radius:18px;
-  padding:16px;
-  border:1px solid #e2e8f0;
-  background:linear-gradient(180deg,#ffffff 0%, #fbfdff 100%);
-  box-shadow:0 10px 26px rgba(15,23,42,.05);
+  border-radius:22px;
+  padding:18px;
+  border:1px solid #dbe6f2;
+  background:
+    radial-gradient(circle at top left,rgba(27,127,199,.08) 0%, rgba(27,127,199,0) 26%),
+    linear-gradient(180deg,#ffffff 0%, #fbfdff 100%);
+  box-shadow:0 18px 38px rgba(10,25,42,.07);
 }
 
 #payrollScreen .panel-title{
-  font-size:15px;
+  font-size:16px;
   font-weight:900;
   margin-bottom:12px;
-  letter-spacing:-0.01em;
+  letter-spacing:-0.02em;
+  color:var(--brand-strong);
 }
 
 #payrollScreen .field{
@@ -336,9 +366,10 @@
 }
 
 #payrollScreen .input{
-  min-height:46px;
-  border-radius:12px;
-  border:1px solid #cbd5e1;
+  min-height:48px;
+  border-radius:14px;
+  border:1px solid #ccdae8;
+  background:linear-gradient(180deg,#ffffff 0%, #f9fcff 100%);
   box-shadow:inset 0 1px 2px rgba(15,23,42,.03);
 }
 
@@ -362,57 +393,70 @@
 
 #payrollScreen .btn:hover{
   transform:translateY(-1px);
-  box-shadow:0 8px 16px rgba(15,23,42,.07);
+  box-shadow:0 12px 24px rgba(15,23,42,.08);
+}
+
+#payrollScreen .btn.primary{
+  box-shadow:0 18px 34px rgba(17,104,177,.28);
 }
 
 #payrollScreen .month-summary{
-  border-radius:20px;
-  border:1px solid #dbe3ef;
-  box-shadow:0 12px 28px rgba(15,23,42,.05);
+  border-radius:26px;
+  border:1px solid #cfdef0;
+  box-shadow:0 24px 54px rgba(7,26,46,.12);
   overflow:hidden;
-  margin-bottom:16px;
+  margin-bottom:18px;
 }
 
 #payrollScreen .month-row{
-  padding:15px 12px;
-  background:linear-gradient(180deg,#f8fbff 0%, #eef4ff 100%);
+  padding:18px 16px;
+  background:
+    radial-gradient(circle at top left,rgba(255,255,255,.58) 0%, rgba(255,255,255,0) 34%),
+    linear-gradient(135deg,#0d3558 0%, #1779c4 42%, #5bb8f3 100%);
 }
 
 #payrollScreen .month-title{
-  font-size:16px;
+  font-size:18px;
   font-weight:900;
   letter-spacing:-0.01em;
+  color:#ffffff;
+  text-shadow:0 6px 18px rgba(0,0,0,.18);
 }
 
 #payrollScreen .month-sub{
   font-size:10px;
-  color:#64748b;
+  color:rgba(255,255,255,.82);
   margin-top:4px;
   font-weight:700;
 }
 
 #payrollScreen .month-pill{
-  background:#ffffff;
-  border:1px solid #dbe3ef;
-  box-shadow:0 2px 8px rgba(15,23,42,.04);
+  background:linear-gradient(180deg,rgba(255,255,255,.96) 0%, rgba(237,246,255,.96) 100%);
+  border:1px solid rgba(255,255,255,.5);
+  box-shadow:0 12px 26px rgba(4,19,34,.14);
   font-weight:900;
+  color:#0b3557;
 }
 
 #payrollScreen .toggle{
   width:30px;
   height:30px;
   border-radius:10px;
-  box-shadow:0 4px 10px rgba(15,23,42,.05);
+  color:#0b3557;
+  border-color:rgba(255,255,255,.5);
+  box-shadow:0 10px 18px rgba(4,19,34,.14);
 }
 
 #payrollScreen .details{
-  padding:14px;
-  background:#fcfdff;
+  padding:16px;
+  background:linear-gradient(180deg,#fcfdff 0%, #f3f8ff 100%);
 }
 
 #payrollScreen .group-title{
-  font-size:13px;
+  font-size:20px;
   font-weight:900;
+  letter-spacing:-0.01em;
+  color:#0d3558;
   margin-bottom:10px;
 }
 
@@ -421,10 +465,12 @@
 }
 
 #payrollScreen .summary-box{
-  border-radius:16px;
-  padding:12px;
-  border:1px solid #e2e8f0;
-  box-shadow:0 6px 16px rgba(15,23,42,.035);
+  border-radius:18px;
+  padding:14px;
+  border:1px solid #dbe6f3;
+  box-shadow:0 16px 30px rgba(9,31,52,.06);
+  background:linear-gradient(180deg,#ffffff 0%, #f8fbff 100%);
+  text-align:center;
 }
 
 #payrollScreen .summary-box .k{
@@ -432,32 +478,46 @@
   font-weight:800;
   color:#64748b;
   margin-bottom:5px;
+  text-align:center;
 }
 
 #payrollScreen .summary-box .v{
-  font-size:20px;
+  font-size:22px;
   font-weight:900;
   letter-spacing:-0.01em;
+  text-align:center;
 }
 
 #payrollScreen .summary-total{
-  box-shadow:none;
+  box-shadow:0 18px 36px rgba(17,104,177,.24);
+  text-align:center;
 }
 
 #payrollScreen .flight{
-  border-radius:18px;
-  border:1px solid #e2e8f0;
-  box-shadow:0 8px 18px rgba(15,23,42,.035);
-  margin-bottom:10px;
+  border-radius:20px;
+  border:1px solid #d8e4f1;
+  box-shadow:0 16px 30px rgba(8,29,49,.07);
+  margin-bottom:12px;
+}
+
+#payrollScreen .card > .flight:nth-of-type(odd){
+  background:linear-gradient(180deg,#ffffff 0%, #f9fcff 100%);
+}
+
+#payrollScreen .card > .flight:nth-of-type(even){
+  background:linear-gradient(180deg,#f3f9ff 0%, #e8f2fc 100%);
 }
 
 #payrollScreen .flight-row{
-  padding:12px 10px;
-  min-height:52px;
+  padding:14px 12px;
+  min-height:56px;
+  background:transparent;
 }
 
 #payrollScreen .route{
   font-weight:900;
+  color:#0d2f4b;
+  letter-spacing:-0.01em;
 }
 
 #payrollScreen .sub{
@@ -469,18 +529,20 @@
 
 #payrollScreen .block,
 #payrollScreen .pay{
-  border-radius:12px;
-  border:1px solid #e2e8f0;
-  background:#f8fafc;
-  padding:8px 6px;
+  border-radius:14px;
+  border:1px solid #dce7f3;
+  background:linear-gradient(180deg,#fbfeff 0%, #e9f3fd 100%);
+  padding:9px 7px;
   font-weight:900;
+  color:#0c3b62;
 }
 
 #payrollScreen .chipbox{
-  border-radius:14px;
-  padding:12px;
-  border:1px solid #e2e8f0;
-  box-shadow:0 4px 12px rgba(15,23,42,.025);
+  border-radius:18px;
+  padding:14px;
+  border:1px solid #dbe6f2;
+  box-shadow:0 16px 28px rgba(8,29,49,.055);
+  background:linear-gradient(180deg,#ffffff 0%, #f9fcff 100%);
 }
 
 #payrollScreen .chipbox .k{
@@ -496,6 +558,44 @@
 #payrollScreen .calc-hint{
   font-weight:700;
   color:#64748b;
+}
+
+.logbook-shell,
+.masterdata-shell{
+  background:linear-gradient(180deg,#ffffff 0%, #fafeff 100%);
+  border-color:#d7e4f0;
+  box-shadow:0 22px 46px rgba(8,29,49,.08);
+}
+
+.logbook-pill,
+.masterdata-pill{
+  background:linear-gradient(180deg,#ffffff 0%, #f3f9ff 100%);
+  border-color:#d8e6f4;
+  color:var(--brand-strong);
+  font-weight:800;
+}
+
+.logbook-year-summary,
+.masterdata-table th{
+  background:linear-gradient(180deg,#f8fbff 0%, #edf4fb 100%);
+}
+
+.masterdata-kpi{
+  border-color:#d7e3ef;
+  box-shadow:0 12px 24px rgba(8,29,49,.05);
+  background:linear-gradient(180deg,#ffffff 0%, #f8fbff 100%);
+}
+
+.login-card{
+  background:
+    radial-gradient(circle at top left,rgba(27,127,199,.1) 0%, rgba(27,127,199,0) 30%),
+    linear-gradient(180deg,#ffffff 0%, #f9fcff 100%);
+  border-color:#d5e2ee;
+  box-shadow:0 28px 58px rgba(8,29,49,.14);
+}
+
+.login-title{
+  color:var(--brand-strong);
 }
 
 @media (max-width:680px){
@@ -797,12 +897,6 @@
             <input class="hidden-file-input" id="systemBackupImportInput" type="file" accept="application/json,.json" onchange="handleSystemBackupImport(event)">
           </div>
         </details>
-      </div>
-      <div class="badges">
-        <div class="badge">UI נעול</div>
-        <div class="badge">חישוב חודשי אוטומטי</div>
-        <div class="badge">שינוי 4/6 חי</div>
-        <div class="badge">שמירת manual</div>
       </div>
       <div class="view-switch">
         <button class="btn ghost active" type="button" id="payrollScreenBtn" onclick="switchScreen('payroll')">מסך שכר</button>
@@ -2546,12 +2640,6 @@ function getMonthBasePayableMoney(month){
 function getMonthOnTopMoney(month){
   return (getMonthOnTopMinutes(month) / 60) * getEffectiveHourlyRate();
 }
-function getMonthFinalSalaryMoney(month){
-  const totalFixMins = totalByPart(month,'fix');
-  const totalStayMins = totalByPart(month,'stay');
-  const baseHoursAndStayMoney = ((totalFixMins + totalStayMins) / 60) * getEffectiveHourlyRate();
-  return Math.max(getEffectiveMinimumEmploymentIls(), baseHoursAndStayMoney) + getMonthOnTopMoney(month);
-}
 function refreshMonthMeta(month){
   month.flightsCount = month.flights.filter(f=>routeIsActivity(f.route)).length;
   const standbyDateSet = new Set();
@@ -2584,7 +2672,11 @@ function recomputeMonthComp(month){
   month.payableHours = toHHMM(basePayableMins);
   month.onTopHours = toHHMM(onTopMins);
   month.totalSalaryHours = toHHMM(basePayableMins + onTopMins);
-  month.finalSalaryIls = getMonthFinalSalaryMoney(month);
+  const effectiveHourlyRate = getEffectiveHourlyRate();
+  const effectiveMinimumEmploymentIls = getEffectiveMinimumEmploymentIls();
+  const baseHoursAndStayMoney = ((totalFixMins + totalStayMins) / 60) * effectiveHourlyRate;
+  const onTopMoney = (onTopMins/60) * effectiveHourlyRate;
+  month.finalSalaryIls = Math.max(effectiveMinimumEmploymentIls, baseHoursAndStayMoney) + onTopMoney;
 }
 function getFlightDateNumber(dateStr){
   const m = String(dateStr||'').match(/^(\d{1,2})\.(\d{1,2})$/);
@@ -2880,7 +2972,7 @@ function renderEditablePart(monthName, flightId, key, part){
 function renderTechEditor(monthName,f){
   return `
     <div class="chipbox full">
-      <div class="k">פרטי טיסה</div>
+      <div class="k flight-tech-title">פרטי טיסה</div>
       <div class="tech-grid">
         <div class="field"><div class="label">תאריך</div><input id="tech-date-${f.id}" class="input date-input-ltr" type="date" lang="en-GB" dir="ltr" value="${escapeHtml(dateToInputValue(f.date||'', monthName))}"></div>
         <div class="field"><div class="label">נתיב</div><input id="tech-route-${f.id}" class="input" list="routeOptionsList" autocomplete="off" value="${escapeHtml(f.route||'')}"></div>
@@ -2889,11 +2981,11 @@ function renderTechEditor(monthName,f){
           ${usesMonthlySequenceOrdering(monthName) ? `<div class="field sequence-field"><div class="label">מס׳ רץ חודשי</div><input id="tech-sequence-${f.id}" class="input tech-sequence-input" inputmode="numeric" value="${escapeHtml(String(getFlightSequenceNumber(f, 0)))}"></div>` : '<div class="field sequence-field"></div>'}
           <div class="field dh-field"><div class="label">DH</div><label class="tech-dh-label"><input id="tech-dh-${f.id}" type="checkbox" ${containsDhNote(f.note) ? 'checked' : ''}><span>טיסת DH</span></label></div>
         </div>
-        <div class="field"><div class="label">המראה 1</div><input id="tech-dep1-${f.id}" class="input" type="time" step="60" value="${escapeHtml(f.dep1||'')}" onchange="syncFlightBlockFromTechInputs('${escapeJs(monthName)}','${f.id}')"></div>
-        <div class="field"><div class="label">נחיתה 1</div><input id="tech-arr1-${f.id}" class="input" type="time" step="60" value="${escapeHtml(f.arr1||'')}" onchange="syncFlightBlockFromTechInputs('${escapeJs(monthName)}','${f.id}')"></div>
-        <div class="field"><div class="label">המראה 2</div><input id="tech-dep2-${f.id}" class="input" type="time" step="60" value="${escapeHtml(f.dep2||'')}" onchange="syncFlightBlockFromTechInputs('${escapeJs(monthName)}','${f.id}')"></div>
-        <div class="field"><div class="label">נחיתה 2</div><input id="tech-arr2-${f.id}" class="input" type="time" step="60" value="${escapeHtml(f.arr2||'')}" onchange="syncFlightBlockFromTechInputs('${escapeJs(monthName)}','${f.id}')"></div>
-        <div class="field"><div class="label">שינוי</div><input id="tech-change-${f.id}" class="input" inputmode="numeric" placeholder="4 / 6" value="${escapeHtml(displayChangeCode(f.changeCode))}"></div>
+        <div class="field time-pair"><div class="label">המראה 1</div><input id="tech-dep1-${f.id}" class="input" type="time" step="60" value="${escapeHtml(f.dep1||'')}" onchange="syncFlightBlockFromTechInputs('${escapeJs(monthName)}','${f.id}')"></div>
+        <div class="field time-pair"><div class="label">נחיתה 1</div><input id="tech-arr1-${f.id}" class="input" type="time" step="60" value="${escapeHtml(f.arr1||'')}" onchange="syncFlightBlockFromTechInputs('${escapeJs(monthName)}','${f.id}')"></div>
+        <div class="field time-pair"><div class="label">המראה 2</div><input id="tech-dep2-${f.id}" class="input" type="time" step="60" value="${escapeHtml(f.dep2||'')}" onchange="syncFlightBlockFromTechInputs('${escapeJs(monthName)}','${f.id}')"></div>
+        <div class="field time-pair"><div class="label">נחיתה 2</div><input id="tech-arr2-${f.id}" class="input" type="time" step="60" value="${escapeHtml(f.arr2||'')}" onchange="syncFlightBlockFromTechInputs('${escapeJs(monthName)}','${f.id}')"></div>
+        <div class="field change-field"><div class="label">שינוי</div><input id="tech-change-${f.id}" class="input" inputmode="numeric" placeholder="4 / 6" value="${escapeHtml(displayChangeCode(f.changeCode))}"></div>
       </div>
       <div class="actions">
         <button class="btn primary" type="button" onclick="updateFlightTech('${monthName}','${f.id}')">עדכן טיסה</button>
@@ -2925,7 +3017,7 @@ function renderMonth(month){
         <div class="month-pill">${totalBlock(month)}</div>
         <div class="month-pill">${getMonthTotalSalaryHours(month)}</div>
         <div class="month-pill">${getMonthBasePayableHours(month)}</div>
-        <div class="month-pill">${formatIls(getMonthFinalSalaryMoney(month))}</div>
+        <div class="month-pill">${formatIls(month.finalSalaryIls)}</div>
         <div class="toggle" onclick="toggleMonth('${month.monthName}')">${ui.openMonths[month.monthName] ? '⌃' : '⌄'}</div>
       </div>
       <div class="details ${ui.openMonths[month.monthName] ? '' : 'collapsed'}">
@@ -2964,7 +3056,7 @@ function renderMonth(month){
             <div class="summary-box"><div class="k">מינימום משרה</div><div class="v">${formatIls(getEffectiveMinimumEmploymentIls())}</div></div>
             <div class="summary-box"><div class="k">On Top</div><div class="v">${formatIls(getMonthOnTopMoney(month))}</div></div>
             <div class="summary-box"><div class="k">שעות לתשלום</div><div class="v">${getMonthBasePayableHours(month)}</div></div>
-            <div class="summary-box summary-total"><div class="k">סה״כ שכר</div><div class="v">${formatIls(getMonthFinalSalaryMoney(month))}</div></div>
+            <div class="summary-box summary-total"><div class="k">סה״כ שכר</div><div class="v">${formatIls(month.finalSalaryIls)}</div></div>
           </div>
         </div>
         <div class="card" style="padding-top:10px;margin-bottom:0">
@@ -2975,7 +3067,7 @@ function renderMonth(month){
               <div class="flight">
                 <div class="flight-row">
                   <div class="date">${escapeHtml(f.date)}</div>
-                  <div class="route-wrap"><div class="route">${escapeHtml(f.route)}</div><div class="sub">${escapeHtml([f.subtitle, f.aircraft ? 'A/C ' + f.aircraft : '', containsDhNote(f.note) ? 'DH' : ''].filter(Boolean).join(' · '))}</div></div>
+                  <div class="route-wrap"><div class="route">${escapeHtml(f.route)}</div><div class="sub">${escapeHtml([f.subtitle, f.aircraft || '', containsDhNote(f.note) ? 'DH' : ''].filter(Boolean).join(' · '))}</div></div>
                   <div class="times">${escapeHtml(f.times)}</div>
                   <div class="pay">${escapeHtml(String(getFlightEshelTotalDays(f)))}</div>
                   <div class="pay">${escapeHtml(String(getFlightActivityDaysForDisplay(month, f.id)))}</div>
@@ -3439,6 +3531,8 @@ function summaryKpiClass(item){
   return 'ok';
 }
 function renderLogbookYearFlightTable(year){
+  let lastMonthKey = '';
+  let monthBandIndex = -1;
   return `
     <div class="logbook-table-wrap">
       <table class="logbook-table">
@@ -3460,8 +3554,17 @@ function renderLogbookYearFlightTable(year){
           </tr>
         </thead>
         <tbody>
-          ${year.rows.map(row => `
-            <tr>
+          ${year.rows.map(row => {
+            const monthKey = String(row.date || '').slice(0, 7);
+            const isNewMonth = monthKey !== lastMonthKey;
+            if (isNewMonth) {
+              monthBandIndex += 1;
+              lastMonthKey = monthKey;
+            }
+            const monthBandClass = monthBandIndex % 2 === 0 ? 'logbook-month-band-odd' : 'logbook-month-band-even';
+            const rowClass = `${monthBandClass}${isNewMonth ? ' logbook-month-start' : ''}`;
+            return `
+            <tr class="${rowClass}">
               <td>${escapeHtml(row.serial)}</td>
               <td>${escapeHtml(formatLogbookDateDisplay(row.date))}</td>
               <td>${escapeHtml(row.type)}</td>
@@ -3475,7 +3578,8 @@ function renderLogbookYearFlightTable(year){
               <td class="input-cell"><input class="logbook-cell-input rem" type="text" value="${escapeAttr(row.rem)}" data-logbook-key="${escapeAttr(row.key)}" data-logbook-field="rem" placeholder=""></td>
               <td class="input-cell"><input class="logbook-cell-input pic" type="text" inputmode="decimal" value="${escapeAttr(row.pic)}" data-logbook-key="${escapeAttr(row.key)}" data-logbook-field="pic" placeholder="00:00"></td>
               <td class="logbook-delete-cell"><button class="logbook-delete-btn" type="button" data-logbook-delete-key="${escapeAttr(row.key)}">מחק</button></td>
-            </tr>`).join('')}
+            </tr>`;
+          }).join('')}
         </tbody>
       </table>
     </div>
@@ -4930,6 +5034,8 @@ function findLoginProfile(username){
   }) || null;
 }
 async function submitLogin(){
+  const activeEl = document.activeElement;
+  if (activeEl && typeof activeEl.blur === 'function') activeEl.blur();
   const username = String(document.getElementById('loginUsername')?.value || '').trim();
   const password = String(document.getElementById('loginPassword')?.value || '').trim();
   const profile = findLoginProfile(username);
@@ -4939,6 +5045,7 @@ async function submitLogin(){
   }
   CLOUD_APP_ID = profile.appId;
   setLoginError('');
+  window.scrollTo(0, 0);
   document.getElementById('loginScreen')?.classList.add('login-hidden');
   await bootCloud();
 }
