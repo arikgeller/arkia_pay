@@ -160,7 +160,7 @@ color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto
   .topbar-head{align-items:flex-start;justify-content:center;position:relative}
   .header-copy{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;width:100%;padding-right:6px;padding-left:24px}
   .header-pilot-meta{display:grid;box-sizing:border-box;align-self:center;margin-top:8px;margin-right:0;margin-left:0;width:calc(100vw - 34px);max-width:calc(100vw - 34px);grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}
-  .header-pilot-row{display:flex;box-sizing:border-box;width:100%;max-width:none;padding:2px 4px;min-height:auto;border:none !important;border-radius:0 !important;background:transparent !important;box-shadow:none !important}
+  .header-pilot-row{display:flex;box-sizing:border-box;width:100%;max-width:none;padding:2px 4px;min-height:auto;border:none;border-radius:0;background:transparent}
   .header-pilot-label{font-size:11px}
   .header-pilot-value{font-size:17px}
   .system-admin-btn{width:34px;height:34px;border-radius:9px;font-size:16px}
@@ -1760,7 +1760,18 @@ const LOGBOOK_MONTH_LABELS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','S
 function normalizeRouteKey(route){ return String(route||'').trim().toLowerCase().replace(/\s+/g,' '); }
 const ROUTE_OPTIONS = ["ARP", "CANC", "sby", "יום הדרכה", "MIL", "SIC", "vec", "stay", "sim", "tlv tlv", "2tlv etm tlv", "tlv etm tlv", "tlv etm", "tlv ams tlv", "tlv ams", "ams tlv", "ams rvn", "tlv ath tlv", "tlv ath", "ath tlv", "tlv bcn tlv", "tlv bcn", "bcn tlv", "tlv beg tlv", "tlv beg", "beg tlv", "tlv bgy tlv", "tlv bkk", "bkk tlv", "bom tlv", "tlv bus tlv", "tlv bud tlv", "bud tlv", "tlv cdg tlv", "tlv cdg", "cdg tlv", "cdg lca", "cdg bcn", "etm cdg", "cdg mpl", "mpl cdg", "tlv cfu tlv", "tlv cmb", "cmb tlv", "tel del tlv", "tlv dub tlv", "tlv dub", "dub tlv", "tlv dxb tlv", "tlv dxb tlv L S", "tlv dxb L tlv", "tlv fco tlv", "fco tlv", "tlv fco", "fco lca", "tlv gnb tlv", "tlv gnb", "gnb ath", "tlv gyd tlv", "tlv hel", "tlv her tlv", "tlv ist tlv", "tlv jro tlv", "tlv jro", "jro tlv", "tlv kiv tlv", "tlv ktw tlv", "tlv kgs tlv", "tlv kgl", "tlv kbp tlv", "tlv klx tlv", "tlv lca tlv", "tlv lca", "lca tlv", "lca ath", "tlv lis tlv", "tlv llw tlv", "tlv llw", "llw tlv", "tlv lpa", "lpa cdg", "tlv mad tlv", "tlv mad", "mad tfn", "tlv muc tlv", "tlv mxp tlv", "tlv nap", "nap fco", "tlv nce tlv", "tlv nos tlv", "tlv nos", "nos tlv", "tlv ods tlv", "tlv otp tlv", "tlv osl tlv", "tlv pfo tlv", "pfo tlv", "etm pfo", "tlv prg tlv", "tlv rze tlv", "tlv rho tlv", "tlv rak tlv", "tlv rak", "rak tlv", "tlv rvn tlv", "tlv rvn", "rvn tlv", "tlv ssh tlv", "tlv sez tlv", "tlv sez", "sez tlv", "sez bkk bom", "sez cmb sez", "ath add sey", "tlv sjj tlv", "sjj tlv", "tlv sof tlv", "tlv sof", "sof tlv", "tlv stn tlv", "tlv stn", "stn tlv", "tlv tbs tlv", "tlv tbs", "tbs tlv", "tlv tgd tlv", "tlv tia tlv", "tlv tiv tlv", "tlv tiv", "tiv tlv", "tiv beg", "tfn tlv", "tlv var tlv", "tlv var", "var tlv", "tlv vie tlv", "vie tlv", "lca vie", "tlv waw tlv", "tlv wmi tlv", "tlv zag", "zag sjj", "tlv znz tlv", "tlv znz", "znz tlv"];
 const ROUTE_OPTIONS_SET = new Set(ROUTE_OPTIONS.map(normalizeRouteKey));
-function isKnownRoute(route){ return ROUTE_OPTIONS_SET.has(normalizeRouteKey(route)); }
+function isKnownRoute(route){
+  const normalized = normalizeRouteKey(route);
+  if (!normalized) return false;
+  const activeRouteRows = (typeof getEffectiveRouteRows === 'function' ? getEffectiveRouteRows() : []);
+  const activeRouteSet = new Set(
+    activeRouteRows
+      .map(row => normalizeRouteKey(row?.route || ''))
+      .filter(Boolean)
+  );
+  if (activeRouteSet.size) return activeRouteSet.has(normalized);
+  return ROUTE_OPTIONS_SET.has(normalized);
+}
 function markInputInvalid(el, invalid){ if (el) el.classList.toggle('invalid', !!invalid); }
 function formatIls(v){ return new Intl.NumberFormat('he-IL',{style:'currency',currency:'ILS',maximumFractionDigits:0}).format(Number(v||0)); }
 function formatUsd(v){ return new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0}).format(Number(v||0)); }
