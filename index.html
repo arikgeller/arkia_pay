@@ -92,6 +92,9 @@ color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto
 .display-value{font-size:14px;font-weight:800;cursor:pointer;user-select:none}.calc-hint{font-size:10px;color:var(--muted)}
 .stay-two-col{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:start;direction:rtl}.stay-col{min-width:0;display:flex;flex-direction:column;gap:6px}.stay-col-label{font-size:10px;color:var(--muted);line-height:1.1;white-space:nowrap}.stay-col-value{font-size:14px;font-weight:800;line-height:1}.stay-col-hours{text-align:right}.stay-col-pay{text-align:left}.stay-col-pay .display-value,.stay-col-hours .stay-col-value{font-size:14px;font-weight:800;line-height:1}.stay-col-pay .display-value{cursor:pointer}
 .edit-row{display:flex;gap:6px;align-items:center}.edit-input{flex:1;border:1px solid #cbd5e1;border-radius:10px;background:#fff;padding:8px 10px;font-size:13px;font-weight:700;text-align:center}
+.edit-row.compact{justify-content:center;gap:4px}
+.edit-row.compact .edit-input{flex:0 1 78px;min-width:78px;padding:5px 8px;font-size:12px;border-radius:8px}
+.edit-row.compact .mini-btn{padding:5px 8px;font-size:11px;border-radius:8px}
 .edit-input.invalid{border-color:var(--danger);background:#fef2f2}
 .mini-btn{width:auto;border:1px solid var(--line);border-radius:10px;background:#fff;padding:8px 10px;font-size:12px;font-weight:700;cursor:pointer}
 .mini-btn.save{background:#111827;color:#fff;border-color:#111827}
@@ -157,6 +160,10 @@ color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto
   .date{font-size:11px}.route{font-size:12px}.sub{font-size:9px}.times,.block,.pay{font-size:11px}
   .block,.pay{padding:6px 4px}.details{padding:8px}.blocks{grid-template-columns:1fr 1fr;gap:6px}
   .chipbox{padding:8px}.chipbox .k{font-size:9px}
+  #payrollScreen .value-area{min-width:0}
+  #payrollScreen .edit-row{gap:3px}
+  #payrollScreen .edit-input{flex:0 1 58px;max-width:58px;width:58px;padding:3px 4px;font-size:11px}
+  #payrollScreen .mini-btn{padding:3px 5px;font-size:9px}
   .topbar-head{align-items:flex-start;justify-content:center;position:relative}
   .header-copy{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;width:100%;padding-right:6px;padding-left:24px}
   .header-pilot-meta{display:grid;box-sizing:border-box;align-self:center;margin-top:8px;margin-right:0;margin-left:0;width:calc(100vw - 34px);max-width:calc(100vw - 34px);grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}
@@ -650,9 +657,48 @@ color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto
   color:#64748b;
 }
 
+@media (min-width:681px){
+  #payrollScreen .chipbox .k{
+    font-size:12px;
+    text-align:center;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+  }
+}
+
 #payrollScreen .display-value{
   font-size:15px;
   font-weight:900;
+}
+
+#payrollScreen .value-area{
+  align-items:center;
+  text-align:center;
+}
+
+#payrollScreen .edit-row{
+  justify-content:center;
+  align-items:center;
+  gap:4px;
+  flex-wrap:wrap;
+  width:100%;
+}
+
+#payrollScreen .edit-input{
+  flex:0 1 64px;
+  min-width:0;
+  max-width:64px;
+  width:64px;
+  padding:3px 5px;
+  font-size:11px;
+  border-radius:8px;
+}
+
+#payrollScreen .mini-btn{
+  padding:3px 6px;
+  font-size:10px;
+  border-radius:8px;
 }
 
 #payrollScreen .calc-hint{
@@ -1144,7 +1190,7 @@ color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto
       <div id="masterDataMount"></div>
     </div>
   </div>
-  <div class="app-version-footer">גרסה 181.96</div>
+  <div class="app-version-footer">גרסה 181.107</div>
 </div>
 
 <datalist id="routeOptionsList">
@@ -1439,14 +1485,14 @@ function applyPersistedMasterDataSettings(appId){
 
 function makeEmptyParts(){
   return {
-    fix: { label: 'פיקס', calc: '00:00', manual: '', type: 'time' },
-    stay: { label: 'תשלום שהייה', calc: '00:00', manual: '', type: 'time' },
-    shabbat: { label: 'שבת', calc: '00:00', manual: '', type: 'time' },
-    hoursB: { label: 'מאיץ שעות', calc: '00:00', manual: '', type: 'time' },
-    daysB: { label: 'מאיץ ימים', calc: '00:00', manual: '', type: 'time' },
-    changePay: { label: 'תשלום שינוי', calc: '00:00', manual: '', type: 'time' },
-    offset: { label: 'קיזוז מאיץ', calc: '00:00', manual: '', type: 'time' },
-    extras: { label: 'נוספות', calc: '00:00', manual: '', type: 'time' },
+    fix: { label: 'פיקס', calc: '00:00', manual: '', type: 'duration' },
+    stay: { label: 'תשלום שהייה', calc: '00:00', manual: '', type: 'duration' },
+    shabbat: { label: 'שבת', calc: '00:00', manual: '', type: 'duration' },
+    hoursB: { label: 'מאיץ שעות', calc: '00:00', manual: '', type: 'duration' },
+    daysB: { label: 'מאיץ ימים', calc: '00:00', manual: '', type: 'duration' },
+    changePay: { label: 'תשלום שינוי', calc: '00:00', manual: '', type: 'duration' },
+    offset: { label: 'קיזוז מאיץ', calc: '00:00', manual: '', type: 'duration' },
+    extras: { label: 'נוספות', calc: '00:00', manual: '', type: 'duration' },
     miluim: { label: 'מילואים', calc: '0', manual: '', type: 'number' }
   };
 }
@@ -1458,6 +1504,7 @@ function makeFlight(id,row,date,route,dep1,arr1,dep2,arr2,aircraft,note){
     aircraft: aircraft || '',
     note: note || '',
     changeCode: 0,
+    manualEshelDays: '',
     manualShabbat: false,
     times:'—',block:'00:00',parts:makeEmptyParts()
   };
@@ -1723,6 +1770,7 @@ function getFlightEshelStayDays(flight, stayAllocation){
 }
 function getFlightEshelTotalDays(flight){
   ensureFlightShape(flight);
+  if (String(flight.manualEshelDays || '').trim() !== '') return Number(flight.manualEshelDays || 0);
   return Number(flight.eshelFlightDays || 0) + Number(flight.eshelStayDays || 0);
 }
 function recomputeMonthEshel(month){
@@ -1760,18 +1808,7 @@ const LOGBOOK_MONTH_LABELS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','S
 function normalizeRouteKey(route){ return String(route||'').trim().toLowerCase().replace(/\s+/g,' '); }
 const ROUTE_OPTIONS = ["ARP", "CANC", "sby", "יום הדרכה", "MIL", "SIC", "vec", "stay", "sim", "tlv tlv", "2tlv etm tlv", "tlv etm tlv", "tlv etm", "tlv ams tlv", "tlv ams", "ams tlv", "ams rvn", "tlv ath tlv", "tlv ath", "ath tlv", "tlv bcn tlv", "tlv bcn", "bcn tlv", "tlv beg tlv", "tlv beg", "beg tlv", "tlv bgy tlv", "tlv bkk", "bkk tlv", "bom tlv", "tlv bus tlv", "tlv bud tlv", "bud tlv", "tlv cdg tlv", "tlv cdg", "cdg tlv", "cdg lca", "cdg bcn", "etm cdg", "cdg mpl", "mpl cdg", "tlv cfu tlv", "tlv cmb", "cmb tlv", "tel del tlv", "tlv dub tlv", "tlv dub", "dub tlv", "tlv dxb tlv", "tlv dxb tlv L S", "tlv dxb L tlv", "tlv fco tlv", "fco tlv", "tlv fco", "fco lca", "tlv gnb tlv", "tlv gnb", "gnb ath", "tlv gyd tlv", "tlv hel", "tlv her tlv", "tlv ist tlv", "tlv jro tlv", "tlv jro", "jro tlv", "tlv kiv tlv", "tlv ktw tlv", "tlv kgs tlv", "tlv kgl", "tlv kbp tlv", "tlv klx tlv", "tlv lca tlv", "tlv lca", "lca tlv", "lca ath", "tlv lis tlv", "tlv llw tlv", "tlv llw", "llw tlv", "tlv lpa", "lpa cdg", "tlv mad tlv", "tlv mad", "mad tfn", "tlv muc tlv", "tlv mxp tlv", "tlv nap", "nap fco", "tlv nce tlv", "tlv nos tlv", "tlv nos", "nos tlv", "tlv ods tlv", "tlv otp tlv", "tlv osl tlv", "tlv pfo tlv", "pfo tlv", "etm pfo", "tlv prg tlv", "tlv rze tlv", "tlv rho tlv", "tlv rak tlv", "tlv rak", "rak tlv", "tlv rvn tlv", "tlv rvn", "rvn tlv", "tlv ssh tlv", "tlv sez tlv", "tlv sez", "sez tlv", "sez bkk bom", "sez cmb sez", "ath add sey", "tlv sjj tlv", "sjj tlv", "tlv sof tlv", "tlv sof", "sof tlv", "tlv stn tlv", "tlv stn", "stn tlv", "tlv tbs tlv", "tlv tbs", "tbs tlv", "tlv tgd tlv", "tlv tia tlv", "tlv tiv tlv", "tlv tiv", "tiv tlv", "tiv beg", "tfn tlv", "tlv var tlv", "tlv var", "var tlv", "tlv vie tlv", "vie tlv", "lca vie", "tlv waw tlv", "tlv wmi tlv", "tlv zag", "zag sjj", "tlv znz tlv", "tlv znz", "znz tlv"];
 const ROUTE_OPTIONS_SET = new Set(ROUTE_OPTIONS.map(normalizeRouteKey));
-function isKnownRoute(route){
-  const normalized = normalizeRouteKey(route);
-  if (!normalized) return false;
-  const activeRouteRows = (typeof getEffectiveRouteRows === 'function' ? getEffectiveRouteRows() : []);
-  const activeRouteSet = new Set(
-    activeRouteRows
-      .map(row => normalizeRouteKey(row?.route || ''))
-      .filter(Boolean)
-  );
-  if (activeRouteSet.size) return activeRouteSet.has(normalized);
-  return ROUTE_OPTIONS_SET.has(normalized);
-}
+function isKnownRoute(route){ return ROUTE_OPTIONS_SET.has(normalizeRouteKey(route)); }
 function markInputInvalid(el, invalid){ if (el) el.classList.toggle('invalid', !!invalid); }
 function formatIls(v){ return new Intl.NumberFormat('he-IL',{style:'currency',currency:'ILS',maximumFractionDigits:0}).format(Number(v||0)); }
 function formatUsd(v){ return new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0}).format(Number(v||0)); }
@@ -2427,7 +2464,10 @@ function getEffectiveBlockMinutes(f){
 function calculateFixCalc(f){
   const key = normalizeRouteKey(f.route);
   const fixMap = getEffectiveRouteFixMap();
-  if (Object.prototype.hasOwnProperty.call(fixMap,key)) return fixMap[key] || '00:00';
+  if (Object.prototype.hasOwnProperty.call(fixMap,key)) {
+    const configuredFix = String(fixMap[key] || '').trim();
+    if (configuredFix) return configuredFix;
+  }
   if (routeIsStay(key) || routeIsStandby(key)) return '00:00';
   const block = getEffectiveBlockMinutes(f);
   return block ? toHHMM(block) : '00:00';
@@ -2783,6 +2823,7 @@ function ensureFlightShape(f){
   f.eshelFlightDays = Number.isFinite(Number(f.eshelFlightDays)) ? Number(f.eshelFlightDays) : 0;
   f.eshelStayDays = Number.isFinite(Number(f.eshelStayDays)) ? Number(f.eshelStayDays) : 0;
   f.eshelUsd = Number.isFinite(Number(f.eshelUsd)) ? Number(f.eshelUsd) : 0;
+  f.manualEshelDays = isValidNumber(f.manualEshelDays) ? String(f.manualEshelDays) : '';
   f.manualShabbat = !!f.manualShabbat;
 }
 function updateFlightDerived(f){
@@ -3012,6 +3053,7 @@ function saveEdit(monthName, flightId, key){
   const val = String(getDraft(flightId,key,finalValue(part))).trim();
   if (!val) part.manual = '';
   else if (part.type==='time' && isValidTime(val)) part.manual = val;
+  else if (part.type==='duration' && isValidDurationHHMM(val)) part.manual = val;
   else if (part.type==='number' && isValidNumber(val)) part.manual = val;
   else return;
   delete ui.drafts[draftKey(flightId,key)]; ui.editing = null;
@@ -3023,6 +3065,22 @@ function resetToCalc(monthName,flightId,key){
   const flight = month.flights.find(f=>f.id===flightId); if(!flight) return;
   flight.parts[key].manual = '';
   delete ui.drafts[draftKey(flightId,key)]; if (ui.editing===draftKey(flightId,key)) ui.editing = null;
+  recalcMonthFromFlightChange(month); render();
+}
+function saveEshelEdit(monthName, flightId){
+  const month = model.months.find(m=>m.monthName===monthName); if(!month) return;
+  const flight = month.flights.find(f=>f.id===flightId); if(!flight) return;
+  const val = String(getDraft(flightId,'eshel',String(getFlightEshelTotalDays(flight)))).trim();
+  if (!val) flight.manualEshelDays = '';
+  else if (isValidNumber(val)) flight.manualEshelDays = val;
+  else return;
+  recalcMonthFromFlightChange(month); render();
+}
+function resetEshelCalc(monthName, flightId){
+  const month = model.months.find(m=>m.monthName===monthName); if(!month) return;
+  const flight = month.flights.find(f=>f.id===flightId); if(!flight) return;
+  flight.manualEshelDays = '';
+  delete ui.drafts[draftKey(flightId,'eshel')];
   recalcMonthFromFlightChange(month); render();
 }
 function toggleFlight(id){ ui.openFlights[id] = !ui.openFlights[id]; render(); }
@@ -3220,8 +3278,10 @@ function updateFlightTech(monthName, flightId){
   const routeInput = document.getElementById(`tech-route-${flightId}`);
   const values = readFlightTechValues(flightId);
   const aircraftInput = document.getElementById(`tech-aircraft-${flightId}`);
-  const routeOk = isKnownRoute(values.route);
-  const aircraftOk = !values.aircraft || isKnownAircraft(values.aircraft);
+  const routeUnchanged = normalizeRouteKey(values.route) === normalizeRouteKey(flight.route);
+  const aircraftUnchanged = String(values.aircraft || '').trim().toLowerCase() === String(flight.aircraft || '').trim().toLowerCase();
+  const routeOk = isKnownRoute(values.route) || routeUnchanged;
+  const aircraftOk = !values.aircraft || isKnownAircraft(values.aircraft) || aircraftUnchanged;
   markInputInvalid(routeInput, !routeOk);
   markInputInvalid(aircraftInput, !aircraftOk);
   const sequenceRaw = String(values.sequenceNumber || '').trim();
@@ -3244,9 +3304,13 @@ function updateFlightTech(monthName, flightId){
 }
 
 function renderEditablePart(monthName, flightId, key, part){
-  const editing = ui.editing === draftKey(flightId,key);
   const display = finalValue(part);
-  const invalid = editing && ((part.type==='time' && getDraft(flightId,key,display) && !isValidTime(getDraft(flightId,key,display))) || (part.type==='number' && getDraft(flightId,key,display) && !isValidNumber(getDraft(flightId,key,display))));
+  const currentValue = getDraft(flightId,key,display);
+  const invalid = (
+    (part.type==='time' && currentValue && !isValidTime(currentValue)) ||
+    (part.type==='duration' && currentValue && !isValidDurationHHMM(currentValue)) ||
+    (part.type==='number' && currentValue && !isValidNumber(currentValue))
+  );
   const month = model.months.find(m=>m.monthName===monthName);
   const flight = month?.flights.find(f=>f.id===flightId);
   const isShabbat = key === 'shabbat';
@@ -3260,7 +3324,10 @@ function renderEditablePart(monthName, flightId, key, part){
               </div>
               <div class="stay-col stay-col-pay">
                 <div class="stay-col-label">תשלום שהייה</div>
-                <div class="display-value" onclick="startEdit('${flightId}','${key}', month.flights.find(f=>f.id==='${flightId}').parts['${key}'])">${escapeHtml(display)}</div>
+                <div class="edit-row">
+                  <input data-edit="${draftKey(flightId,key)}" class="edit-input ${invalid?'invalid':''}" value="${escapeHtml(currentValue)}" oninput="updateDraft('${flightId}','${key}',this.value)">
+                  <button class="mini-btn save" type="button" onclick="saveEdit('${monthName}','${flightId}','${key}')">שמור</button>
+                </div>
               </div>
             </div>` : '';
   const shabbatToggle = isShabbat ? `
@@ -3274,14 +3341,12 @@ function renderEditablePart(monthName, flightId, key, part){
       ${isManual(part) ? '<div class="manual-mark">manual</div>' : ''}
       ${topLabel}
       <div class="value-area">
-        ${editing ? `
+        ${isStayRoute ? stayDualLayout : `
           <div class="edit-row">
-            <input data-edit="${draftKey(flightId,key)}" class="edit-input ${invalid?'invalid':''}" value="${escapeHtml(getDraft(flightId,key,display))}" oninput="updateDraft('${flightId}','${key}',this.value)">
+            <input data-edit="${draftKey(flightId,key)}" class="edit-input ${invalid?'invalid':''}" value="${escapeHtml(currentValue)}" oninput="updateDraft('${flightId}','${key}',this.value)">
             <button class="mini-btn save" type="button" onclick="saveEdit('${monthName}','${flightId}','${key}')">שמור</button>
             <button class="mini-btn" type="button" onclick="cancelEdit('${flightId}','${key}')">בטל</button>
           </div>
-        ` : `
-          ${isStayRoute ? stayDualLayout : `<div class="display-value" onclick="startEdit('${flightId}','${key}', month.flights.find(f=>f.id==='${flightId}').parts['${key}'])">${escapeHtml(display)}</div>`}
           <div class="calc-hint">מחושב: ${escapeHtml(String(part.calc))}</div>
         `}
       </div>
@@ -3313,17 +3378,30 @@ function renderTechEditor(monthName,f){
     </div>`;
 }
 
-function renderFlightEshelBox(f){
+function renderFlightEshelBox(monthName, f){
   ensureFlightShape(f);
   const totalDays = getFlightEshelTotalDays(f);
-  return `<div class="chipbox"><div class="k">אשל</div><div class="value-area"><div class="display-value">${escapeHtml(String(totalDays))}</div></div></div>`;
+  const currentValue = getDraft(f.id,'eshel',String(totalDays));
+  const invalid = currentValue && !isValidNumber(currentValue);
+  return `<div class="chipbox ${String(f.manualEshelDays || '').trim() !== '' ? 'manual' : ''}">
+    ${String(f.manualEshelDays || '').trim() !== '' ? '<div class="manual-mark">manual</div>' : ''}
+    <div class="k">אשל</div>
+    <div class="value-area">
+      <div class="edit-row compact">
+        <input data-edit="${draftKey(f.id,'eshel')}" class="edit-input ${invalid?'invalid':''}" value="${escapeHtml(currentValue)}" oninput="updateDraft('${f.id}','eshel',this.value)">
+        <button class="mini-btn save" type="button" onclick="saveEshelEdit('${monthName}','${f.id}')">שמור</button>
+      </div>
+      <div class="calc-hint">מחושב: ${escapeHtml(String(Number(f.eshelFlightDays || 0) + Number(f.eshelStayDays || 0)))}</div>
+    </div>
+    ${String(f.manualEshelDays || '').trim() !== '' ? `<div class="actions"><button class="mini-btn" type="button" onclick="resetEshelCalc('${monthName}','${f.id}')">איפוס למחושב</button></div>` : ''}
+  </div>`;
 }
 
 function renderFlightBlocks(monthName, f){
   const blocks = [];
   Object.entries(f.parts).forEach(([key, part]) => {
     blocks.push(renderEditablePart(monthName, f.id, key, part));
-    if(key === 'changePay') blocks.push(renderFlightEshelBox(f));
+    if(key === 'changePay') blocks.push(renderFlightEshelBox(monthName, f));
   });
   return blocks.join('');
 }
@@ -5456,6 +5534,16 @@ deleteMonth = async function(monthName){
   if (changed) scheduleCloudSave();
   return changed;
 };
+window.startEdit = startEdit;
+window.updateDraft = updateDraft;
+window.saveEdit = saveEdit;
+window.cancelEdit = cancelEdit;
+window.resetToCalc = resetToCalc;
+window.saveEshelEdit = saveEshelEdit;
+window.resetEshelCalc = resetEshelCalc;
+window.updateFlightTech = updateFlightTech;
+window.deleteFlight = deleteFlight;
+window.deleteMonth = deleteMonth;
 
 function setLoginError(message){
   const el = document.getElementById('loginError');
