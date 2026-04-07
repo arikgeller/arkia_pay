@@ -30,11 +30,13 @@ color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto
 .system-admin-status{font-size:11px;color:var(--ok);font-weight:800;min-height:16px;margin-top:8px}
 .hidden-file-input{display:none}
 .title{font-size:31px;font-weight:950;letter-spacing:-0.04em;color:var(--brand-strong);margin:0 0 6px}
-.subtitle{font-size:13px;color:#58708a;margin-bottom:12px;max-width:700px}
+.title-en{font-size:.78em;letter-spacing:-0.01em}
+.subtitle{display:none}
 .card{background:linear-gradient(180deg,#ffffff 0%, #fbfdff 100%);border:1px solid rgba(210,222,236,.96);border-radius:24px;padding:14px;box-shadow:0 22px 48px rgba(10,25,42,.08);margin-bottom:14px}
 .badges{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
 .badge{display:inline-flex;align-items:center;padding:6px 11px;border-radius:999px;background:linear-gradient(180deg,#ffffff 0%, #edf6ff 100%);border:1px solid #d8e5f3;color:var(--brand-strong);font-size:11px;font-weight:900;letter-spacing:.01em}
 .note{font-size:12px;color:var(--muted);line-height:1.45}
+.app-version-footer{margin:18px 0 0;text-align:center;font-size:13px;font-weight:800;color:#58708a}
 .workspace-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
 .panel-title{font-size:13px;font-weight:800;margin-bottom:8px}
 .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
@@ -49,6 +51,12 @@ color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto
 .btn{border:1px solid #d7e4f0;background:linear-gradient(180deg,#ffffff 0%, #f7fbff 100%);border-radius:14px;padding:9px 12px;font-size:12px;font-weight:900;cursor:pointer;color:var(--brand-strong)}
 .btn.primary{background:linear-gradient(135deg,#1fa2ee 0%, #1678c2 54%, #0d3558 100%);color:#fff;border-color:#126caa}.btn.soft{background:linear-gradient(180deg,#f8fbff 0%, #edf4fb 100%)}
 .success{font-size:11px;color:var(--ok);margin-top:8px;font-weight:700}
+.confirm-overlay{position:fixed;inset:0;background:rgba(15,23,42,.44);display:none;align-items:center;justify-content:center;padding:16px;z-index:12000}
+.confirm-overlay.open{display:flex}
+.confirm-dialog{width:min(420px,100%);background:#fff;border:1px solid var(--line);border-radius:20px;padding:18px;box-shadow:0 22px 50px rgba(15,23,42,.24)}
+.confirm-title{font-size:18px;font-weight:900;color:var(--brand-strong);margin:0 0 8px;text-align:center}
+.confirm-text{font-size:14px;line-height:1.5;color:var(--text);text-align:center;margin:0}
+.confirm-actions{display:flex;gap:10px;justify-content:center;margin-top:16px}
 .collapsed{display:none}
 .month-row-header,.month-row{display:grid;grid-template-columns:minmax(0,1fr) 72px 88px 108px 78px 28px;gap:8px;align-items:center}
 .month-row-header{padding:0 6px 8px;font-size:10px;color:var(--muted);font-weight:700}
@@ -64,6 +72,8 @@ color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto
 .summary-box{background:#fff;border:1px solid var(--line);border-radius:14px;padding:10px}
 .summary-box .k{font-size:11px;color:var(--muted);margin-bottom:4px}.summary-box .v{font-size:18px;font-weight:800}
 .summary-box.alert{background:#fef2f2;border-color:#fecaca}.summary-box.alert .k,.summary-box.alert .v{color:#b91c1c}
+.summary-box.offset-soft{background:#fef2f2;border-color:#fecaca}
+.summary-box.offset-soft .k,.summary-box.offset-soft .v{color:#000}
 .summary-total{grid-column:1/-1;background:linear-gradient(135deg,#0b3557 0%, #1168b1 45%, #22a6f2 100%);color:#fff;border-color:#0b3557;box-shadow:0 16px 36px rgba(17,104,177,.28)}.summary-total .k{color:#e3f2ff}.summary-total .v{font-size:20px;color:#000}
 .list-header,.flight-row{display:grid;grid-template-columns:52px minmax(0,1fr) 92px 54px 54px 58px 74px 28px;gap:8px;align-items:center}
 .list-header{padding:0 6px 8px;font-size:10px;color:var(--muted);font-weight:700}
@@ -127,21 +137,34 @@ color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto
 }
 
 @media (max-width:680px){
-  .app{max-width:100%;padding:10px 10px 64px}.title{font-size:22px}.subtitle{font-size:12px}.card{border-radius:16px;padding:10px}
+  .app{max-width:100%;padding:10px 10px 64px}.title{font-size:22px}.card{border-radius:16px;padding:10px}
   .workspace-grid,.form-grid,.tech-grid{grid-template-columns:1fr;gap:10px}
   .month-row-header,.month-row{grid-template-columns:minmax(0,1fr) 60px 68px 78px 60px 24px;gap:6px}
   .month-row-header{padding:0 4px 6px;font-size:9px}.month-row{padding:8px 6px;min-height:44px}
   .month-title{font-size:12px}.month-sub{display:none}.month-pill{font-size:10px;padding:6px 4px}.toggle{width:24px;height:24px;border-radius:8px}
   .summary-grid{grid-template-columns:1fr 1fr;gap:6px}
   .summary-box{padding:8px}.summary-box .k{font-size:10px}.summary-box .v{font-size:15px}
+  #payrollScreen .fix-hours-box{order:1}
+  #payrollScreen .stay-pay-box{order:2}
+  #payrollScreen .shabbat-box{order:3}
+  #payrollScreen .offset-box{order:4}
+  #payrollScreen .accel-days-box{order:5}
+  #payrollScreen .accel-hours-box{order:6}
+  #payrollScreen .extras-box{order:7}
+  #payrollScreen .change-pay-box{order:8}
   .list-header,.flight-row{grid-template-columns:42px minmax(0,1fr) 82px 42px 42px 48px 58px 24px;gap:6px}
   .list-header{padding:0 4px 6px;font-size:9px}.flight-row{padding:8px 6px;min-height:44px}
   .date{font-size:11px}.route{font-size:12px}.sub{font-size:9px}.times,.block,.pay{font-size:11px}
   .block,.pay{padding:6px 4px}.details{padding:8px}.blocks{grid-template-columns:1fr 1fr;gap:6px}
   .chipbox{padding:8px}.chipbox .k{font-size:9px}
-  .topbar-head{align-items:flex-start}
-  .system-admin-btn{width:40px;height:40px;border-radius:10px}
-  .system-admin{position:static}
+  .topbar-head{align-items:flex-start;justify-content:center;position:relative}
+  .header-copy{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;width:100%;padding-right:6px;padding-left:24px}
+  .header-pilot-meta{display:grid;box-sizing:border-box;align-self:center;margin-top:8px;margin-right:0;margin-left:0;width:calc(100vw - 34px);max-width:calc(100vw - 34px);grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}
+  .header-pilot-row{display:flex;box-sizing:border-box;width:100%;max-width:none;padding:2px 4px;min-height:auto;border:none !important;border-radius:0 !important;background:transparent !important;box-shadow:none !important}
+  .header-pilot-label{font-size:11px}
+  .header-pilot-value{font-size:17px}
+  .system-admin-btn{width:34px;height:34px;border-radius:9px;font-size:16px}
+  .system-admin{position:absolute;top:0;left:0;z-index:6}
   .system-admin[open]::before{content:"";position:fixed;inset:0;background:rgba(15,23,42,.28);z-index:19}
   .system-admin-panel{
     position:fixed;
@@ -161,8 +184,8 @@ color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto
   .system-admin-panel::before{content:"";display:block;width:42px;height:5px;border-radius:999px;background:#d1d5db;margin:0 auto 10px}
 }
 
-.view-switch{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
-.view-switch .btn{min-width:132px}
+.view-switch{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;justify-content:center}
+.view-switch .btn{min-width:220px;min-height:44px;padding:10px 20px;border-radius:14px;font-size:16px;line-height:1.1}
 .btn.ghost.active{background:linear-gradient(135deg,#0b3557 0%, #1168b1 52%, #1ea1ed 100%);color:#fff;border-color:#0b3557;box-shadow:0 14px 30px rgba(17,104,177,.24)}
 .screen-hidden{display:none!important}
 .logbook-shell{margin-top:12px;direction:ltr}
@@ -262,6 +285,17 @@ color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto
 .masterdata-note{font-size:13px;color:var(--muted);text-align:right}
 .masterdata-toolbar{display:flex;gap:8px;flex-wrap:wrap}
 .masterdata-pill{background:#f8fafc;border:1px solid var(--line);border-radius:999px;padding:8px 12px;font-size:12px;color:var(--muted)}
+.masterdata-profile-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:12px}
+.masterdata-profile-card{border:1px solid var(--line);border-radius:14px;background:#fff;padding:12px 10px;text-align:center;display:flex;flex-direction:column;justify-content:center;min-height:94px}
+.masterdata-profile-label{font-size:11px;color:var(--muted);font-weight:800;margin-bottom:8px}
+.masterdata-profile-input{width:100%;box-sizing:border-box;border:1px solid #cbd5e1;border-radius:12px;background:#fff;padding:10px 12px;font-size:15px;font-weight:800;text-align:center;color:var(--text)}
+.header-copy{text-align:center;width:100%}
+.header-pilot-meta{display:none;margin:10px auto 0;max-width:700px;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.header-pilot-meta.visible{display:block}
+.header-pilot-meta.visible{display:grid}
+.header-pilot-row{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;padding:8px 10px;border:1px solid #dbe7f5;border-radius:12px;background:#f8fbff;font-size:14px;line-height:1.35;min-height:64px}
+.header-pilot-label{font-weight:900;color:var(--brand-strong);font-size:14px}
+.header-pilot-value{font-weight:900;color:var(--text);text-align:center;font-size:18px}
 .masterdata-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-bottom:12px}
 .masterdata-kpi{border:1px solid var(--line);border-radius:14px;background:#fff;padding:12px 10px;text-align:center}
 .masterdata-kpi-label{font-size:11px;color:var(--muted);font-weight:800;margin-bottom:6px}
@@ -290,6 +324,10 @@ color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto
   .masterdata-note{font-size:12px}
   .masterdata-toolbar{width:100%;gap:6px}
   .masterdata-pill{width:100%;text-align:center}
+  .masterdata-profile-grid{grid-template-columns:1fr;gap:6px}
+  .masterdata-profile-card{min-height:auto;padding:10px 8px}
+  .masterdata-profile-input{font-size:14px;padding:9px 10px}
+  .header-copy{text-align:center}
   .masterdata-summary{grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
   .masterdata-kpi{padding:10px 8px}
   .masterdata-kpi-value{font-size:18px}
@@ -333,18 +371,18 @@ color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto
 
 /* v143 payroll-only visual upgrade, built to keep rollback to v141 simple */
 #payrollScreen .workspace-grid{
-  gap:18px;
+  grid-template-columns:minmax(320px,0.9fr) minmax(520px,1.1fr);
+  gap:22px;
   align-items:start;
 }
 
 #payrollScreen .form-card{
-  border-radius:22px;
-  padding:18px;
-  border:1px solid #dbe6f2;
-  background:
-    radial-gradient(circle at top left,rgba(27,127,199,.08) 0%, rgba(27,127,199,0) 26%),
-    linear-gradient(180deg,#ffffff 0%, #fbfdff 100%);
-  box-shadow:0 18px 38px rgba(10,25,42,.07);
+  position:relative;
+  min-height:88px;
+  padding:8px 0;
+  border:none;
+  background:transparent;
+  box-shadow:none;
 }
 
 #payrollScreen .panel-title{
@@ -377,6 +415,37 @@ color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto
   outline:none;
   border-color:#94a3b8;
   box-shadow:0 0 0 3px rgba(148,163,184,.15);
+}
+
+#payrollScreen .action-popover{
+  border:1px solid #d8e5f2;
+  border-radius:18px;
+  padding:16px;
+  background:linear-gradient(180deg,#ffffff 0%, #f8fbff 100%);
+  box-shadow:0 18px 34px rgba(15,23,42,.08);
+}
+
+  #payrollScreen .workspace-grid > .form-card > .actions{
+  justify-content:center;
+}
+
+#payrollScreen .workspace-grid > .form-card > .actions > .btn.primary{
+  min-width:220px;
+  min-height:44px;
+  padding:10px 20px;
+  border-radius:14px;
+  font-size:16px;
+  line-height:1.1;
+}
+
+#payrollScreen #newMonthFormWrap{
+  max-width:420px;
+  margin-inline:auto;
+}
+
+#payrollScreen #newFlightFormWrap{
+  max-width:640px;
+  margin-inline:auto;
 }
 
 #payrollScreen .actions{
@@ -488,9 +557,40 @@ color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto
   text-align:center;
 }
 
+#payrollScreen .summary-box.offset-soft{
+  background:linear-gradient(180deg,#fef2f2 0%, #fde2e2 100%);
+  border-color:#fecaca;
+}
+
+#payrollScreen .summary-box.offset-soft .k,
+#payrollScreen .summary-box.offset-soft .v{
+  color:#000;
+}
+
+#payrollScreen .summary-box.green-soft{
+  background:linear-gradient(180deg,#ecfdf5 0%, #dff7eb 100%);
+  border-color:#bbf7d0;
+}
+
+#payrollScreen .summary-box.green-soft .k,
+#payrollScreen .summary-box.green-soft .v{
+  color:#000;
+}
+
 #payrollScreen .summary-total{
+  grid-column:auto;
   box-shadow:0 18px 36px rgba(17,104,177,.24);
+  border-color:#b9daf6;
+  background:linear-gradient(180deg,#e8f4ff 0%, #d7ecff 100%);
   text-align:center;
+}
+
+#payrollScreen .summary-total .k{
+  color:#1e3a5f;
+}
+
+#payrollScreen .summary-total .v{
+  color:#000;
 }
 
 #payrollScreen .flight{
@@ -600,23 +700,45 @@ color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto
 
 @media (max-width:680px){
   #payrollScreen .workspace-grid{
+    grid-template-columns:1fr;
     gap:12px;
   }
   #payrollScreen .form-card{
     padding:14px;
     border-radius:16px;
+    min-height:auto;
+  }
+  #payrollScreen .action-popover{
+    padding:12px;
+    border-radius:14px;
+  }
+  #payrollScreen .month-row-header{
+    display:none;
   }
   #payrollScreen .month-row{
-    padding:11px 8px;
-  }
-  #payrollScreen .month-row-header,
-  #payrollScreen .month-row{
-    grid-template-columns:minmax(0,1fr) 56px 64px 72px 56px 24px;
+    grid-template-columns:minmax(0,1fr) 48px 58px 66px 60px 24px;
     gap:5px;
+    padding:10px 6px;
+    min-height:48px;
+    align-items:center;
+  }
+  #payrollScreen .month-wrap{
+    min-width:0;
+  }
+  #payrollScreen .month-title{
+    font-size:12px;
+  }
+  #payrollScreen .month-sub{
+    display:none !important;
   }
   #payrollScreen .month-pill{
     font-size:9px;
     padding:5px 3px;
+  }
+  #payrollScreen .month-row > .toggle{
+    width:24px;
+    height:24px;
+    border-radius:8px;
   }
   #payrollScreen .summary-grid{
     gap:8px;
@@ -778,9 +900,16 @@ color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto
   #payrollScreen .flight{
     border-radius:14px !important;
     overflow:hidden !important;
-    background:#fff !important;
     border:1px solid #e2e8f0 !important;
     box-shadow:0 6px 16px rgba(15,23,42,.04) !important;
+  }
+
+  #payrollScreen .card > .flight:nth-of-type(odd){
+    background:linear-gradient(180deg,#ffffff 0%, #f9fcff 100%) !important;
+  }
+
+  #payrollScreen .card > .flight:nth-of-type(even){
+    background:linear-gradient(180deg,#f3f9ff 0%, #e8f2fc 100%) !important;
   }
 
   #payrollScreen .flight-row{
@@ -869,9 +998,8 @@ color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto
     <div class="card">
       <div class="topbar-head">
         <div class="header-copy">
-          <div class="title">מערכת שכר ארקיע</div>
-          <div class="subtitle">גרסה 173</div>
-          
+          <div class="title">מערכת שכר ו <span class="title-en">LOGBOOK</span></div>
+          <div id="headerPilotMeta" class="header-pilot-meta"></div>
         </div>
         <details class="system-admin" id="systemAdminPanel">
           <summary class="system-admin-btn" aria-label="ניהול מערכת">⚙️</summary>
@@ -908,25 +1036,28 @@ color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto
   <div id="payrollScreen">
     <div class="workspace-grid">
       <div class="form-card">
-        <div class="panel-title">טופס 1 — יצירת חודש חדש</div>
-        <div class="form-grid one">
-          <div class="field">
-            <div class="label">שם חודש</div>
-            <input id="newMonthName" class="input" placeholder="למשל: יוני 2026">
-          </div>
+        <div class="actions" style="margin-top:0">
+          <button class="btn primary" type="button" onclick="toggleNewMonthForm()" id="newMonthToggleBtn">צור חודש חדש</button>
         </div>
-        <div class="actions">
-          <button class="btn primary" type="button" onclick="createMonth()">צור חודש חדש</button>
+        <div id="newMonthFormWrap" class="collapsed action-popover" style="margin-top:12px">
+          <div class="form-grid one">
+            <div class="field">
+              <div class="label">שם חודש</div>
+              <input id="newMonthName" class="input" placeholder="למשל: יוני 2026">
+            </div>
+          </div>
+          <div class="actions">
+            <button class="btn primary" type="button" onclick="createMonth()">צור חודש חדש</button>
+          </div>
         </div>
         <div id="monthCreateMsg" class="success"></div>
       </div>
 
       <div class="form-card">
-        <div class="panel-title">טופס 2 — יצירת טיסה חדשה ידנית</div>
         <div class="actions" style="margin-top:0">
-          <button class="btn primary" type="button" onclick="toggleNewFlightForm()" id="newFlightToggleBtn">פתיחת טופס טיסה חדשה</button>
+          <button class="btn primary" type="button" onclick="toggleNewFlightForm()" id="newFlightToggleBtn">צור טיסה חדשה</button>
         </div>
-        <div id="newFlightFormWrap" class="collapsed" style="margin-top:10px">
+        <div id="newFlightFormWrap" class="collapsed action-popover" style="margin-top:12px">
           <div class="form-grid">
             <div class="field">
               <div class="label">תאריך</div>
@@ -991,7 +1122,6 @@ color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto
         <div class="logbook-toolbar">
           <div class="logbook-pill">נמשך מהשכר בלבד</div>
           <div class="logbook-pill">מופיעות רק טיסות שתאריך הטיסה שלהן עבר</div>
-          <div class="logbook-pill">מבנה הטבלה לפי האקסל</div>
         </div>
       </div>
       <div id="logbookMount"></div>
@@ -1003,17 +1133,18 @@ color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto
       <div class="masterdata-head">
         <div>
           <div class="masterdata-title">MASTER DATA</div>
-          <div class="masterdata-note">תצוגה בלבד של נתוני בסיס הקיימים כרגע במערכת. אין במסך זה עריכה, אין שמירה חדשה, ואין השפעה על חישובי השכר או על הלוגבוק.</div>
+          <div class="masterdata-note">ניהול נתוני בסיס של המערכת ושל פרטי הטייס. השינויים נשמרים לאחר לחיצה על שמירה, ומופיעים גם בכותרת העליונה וגם בייצוא הלוגבוק.</div>
         </div>
         <div class="masterdata-toolbar">
-          <div class="masterdata-pill">קריאה בלבד</div>
-          <div class="masterdata-pill">ללא עריכה</div>
-          <div class="masterdata-pill">ללא שינוי חישובים</div>
+          <div class="masterdata-pill">כולל פרטי טייס</div>
+          <div class="masterdata-pill">עריכה ושמירה</div>
+          <div class="masterdata-pill">מופיע גם ב-PDF</div>
         </div>
       </div>
       <div id="masterDataMount"></div>
     </div>
   </div>
+  <div class="app-version-footer">גרסה 181.96</div>
 </div>
 
 <datalist id="routeOptionsList">
@@ -1169,7 +1300,7 @@ color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
 <script>
-const ui = { editing: null, drafts: {}, openMonths: {}, openFlights: {}, newFlightFormOpen: false, screen: 'payroll', masterDataDraft: null, masterDataDirty: false };
+const ui = { editing: null, drafts: {}, openMonths: {}, openFlights: {}, newMonthFormOpen: false, newFlightFormOpen: false, screen: 'payroll', masterDataDraft: null, masterDataDirty: false };
 const model = {
   months: [
     {
@@ -1274,6 +1405,9 @@ function readPersistedMasterDataSettings(appId){
     const next = {};
     if (Number.isFinite(Number(parsed.minimumEmploymentIls))) next.minimumEmploymentIls = Number(parsed.minimumEmploymentIls);
     if (Number.isFinite(Number(parsed.defaultHourlyRate))) next.defaultHourlyRate = Number(parsed.defaultHourlyRate);
+    if (typeof parsed.pilotName === 'string') next.pilotName = parsed.pilotName;
+    if (typeof parsed.pilotRole === 'string') next.pilotRole = parsed.pilotRole;
+    if (typeof parsed.companyName === 'string') next.companyName = parsed.companyName;
     return Object.keys(next).length ? next : null;
   } catch (err) {
     console.warn('Failed reading local master data settings', err);
@@ -1284,7 +1418,10 @@ function persistMasterDataSettingsLocally(appId){
   try {
     const data = {
       minimumEmploymentIls: getEffectiveMinimumEmploymentIls(),
-      defaultHourlyRate: getEffectiveHourlyRate()
+      defaultHourlyRate: getEffectiveHourlyRate(),
+      pilotName: getPilotProfile().pilotName,
+      pilotRole: getPilotProfile().pilotRole,
+      companyName: getPilotProfile().companyName
     };
     localStorage.setItem(getMasterDataSettingsStorageKey(appId), JSON.stringify(data));
   } catch (err) {
@@ -2315,6 +2452,112 @@ function calculateStayActivityDays(prev, next){
   const diffDays = getCalendarDayDiff(prev.date, next.date);
   return Math.max(0, diffDays - 1);
 }
+function routeCountsForActivityDay(route){
+  const r = normalizeRouteKey(route);
+  return !!r && !['vec','sic','canc','mil'].includes(r);
+}
+function getFlightActivityDateKey(monthName, flight){
+  return dateToInputValue(flight?.date || '', monthName);
+}
+function addDaysToIsoDate(isoDate, days){
+  if (!isoDate) return '';
+  const dt = new Date(`${isoDate}T00:00:00`);
+  if (Number.isNaN(dt.getTime())) return '';
+  dt.setDate(dt.getDate() + Number(days || 0));
+  return `${dt.getFullYear()}-${pad2(dt.getMonth() + 1)}-${pad2(dt.getDate())}`;
+}
+function buildActivityDayIncrementMap(month){
+  const flights = getFlightsInLogicalSequence(month);
+  const dayStats = new Map();
+  const standbyDayContext = new Map();
+  flights.forEach(flight => {
+    ensureFlightShape(flight);
+    const routeKey = normalizeRouteKey(flight.route);
+    const dateKey = getFlightActivityDateKey(month?.monthName, flight);
+    if (!dateKey || !routeCountsForActivityDay(routeKey)) return;
+    if (!dayStats.has(dateKey)) dayStats.set(dateKey, { total: 0, nonStay: 0 });
+    const stats = dayStats.get(dateKey);
+    stats.total += 1;
+    if (routeKey !== 'stay') stats.nonStay += 1;
+    if (!standbyDayContext.has(dateKey)) {
+      standbyDayContext.set(dateKey, { hasStandby: false, hasFlightRoute: false, countedStandbyIndex: 0 });
+    }
+    const standbyStats = standbyDayContext.get(dateKey);
+    if (routeKey === 'sby') standbyStats.hasStandby = true;
+    if (routeIsActivity(routeKey)) standbyStats.hasFlightRoute = true;
+  });
+
+  let countedStandbyDays = 0;
+  Array.from(standbyDayContext.keys()).sort().forEach(dateKey => {
+    const standbyStats = standbyDayContext.get(dateKey);
+    if (!standbyStats?.hasStandby) return;
+    if (!standbyStats.hasFlightRoute) {
+      countedStandbyDays += 1;
+      standbyStats.countedStandbyIndex = countedStandbyDays;
+      return;
+    }
+    standbyStats.countedStandbyIndex = countedStandbyDays;
+  });
+
+  const awardedDates = new Set();
+  const increments = new Map();
+  flights.forEach(flight => {
+    ensureFlightShape(flight);
+    const routeKey = normalizeRouteKey(flight.route);
+    const dateKey = getFlightActivityDateKey(month?.monthName, flight);
+    let increment = 0;
+
+    if (!dateKey || !routeCountsForActivityDay(routeKey)) {
+      increments.set(String(flight.id), 0);
+      return;
+    }
+
+    const stats = dayStats.get(dateKey) || { total: 0, nonStay: 0 };
+    const standbyStats = standbyDayContext.get(dateKey) || { hasStandby: false, hasFlightRoute: false, countedStandbyIndex: 0 };
+    if (routeKey === 'stay') {
+      const hasNonStayOnSameDay = stats.nonStay > 0;
+      if (!hasNonStayOnSameDay && !awardedDates.has(dateKey)) {
+        increment = 1;
+        awardedDates.add(dateKey);
+      }
+      increments.set(String(flight.id), increment);
+      return;
+    }
+    if (routeKey === 'sby') {
+      const standbyEligible = standbyStats.countedStandbyIndex > 3;
+      if (!standbyStats.hasFlightRoute && standbyEligible && !awardedDates.has(dateKey)) {
+        increment += 1;
+        awardedDates.add(dateKey);
+      }
+      if (!standbyStats.hasFlightRoute && standbyEligible && flightCreatesNextActivityDay(flight)) {
+        const nextDateKey = addDaysToIsoDate(dateKey, 1);
+        if (nextDateKey && !awardedDates.has(nextDateKey)) {
+          increment += 1;
+          awardedDates.add(nextDateKey);
+        }
+      }
+      increments.set(String(flight.id), increment);
+      return;
+    }
+
+    if (!awardedDates.has(dateKey)) {
+      increment += 1;
+      awardedDates.add(dateKey);
+    }
+
+    if (flightCreatesNextActivityDay(flight)) {
+      const nextDateKey = addDaysToIsoDate(dateKey, 1);
+      if (nextDateKey && !awardedDates.has(nextDateKey)) {
+        increment += 1;
+        awardedDates.add(nextDateKey);
+      }
+    }
+
+    increments.set(String(flight.id), increment);
+  });
+
+  return increments;
+}
 function flightCreatesNextActivityDay(f){
   const g = lastDep(f);
   const h = lastArr(f);
@@ -2489,19 +2732,8 @@ function calculateChangePayCalc(f){
 
 
 function getFlightActivityDaysForDisplay(month, flightId){
-  const flights = getFlightsInLogicalSequence(month);
-  let prevStandbyL = 0;
-  for (let idx = 0; idx < flights.length; idx += 1) {
-    const current = flights[idx];
-    ensureFlightShape(current);
-    const prevFlight = idx > 0 ? flights[idx - 1] : null;
-    const nextFlight = idx < flights.length - 1 ? flights[idx + 1] : null;
-    const standbyL = calculateStandbyL(current, prevFlight, nextFlight, prevStandbyL);
-    const activityDays = calculateActivityIncrement(current, prevFlight, nextFlight, standbyL);
-    prevStandbyL = standbyL;
-    if (String(current.id) === String(flightId)) return activityDays;
-  }
-  return 0;
+  const activityMap = buildActivityDayIncrementMap(month);
+  return Number(activityMap.get(String(flightId)) || 0);
 }
 
 function getFlightStayDurationDisplay(month, flightId){
@@ -2640,6 +2872,14 @@ function getMonthBasePayableMoney(month){
 function getMonthOnTopMoney(month){
   return (getMonthOnTopMinutes(month) / 60) * getEffectiveHourlyRate();
 }
+function getMonthGuaranteedBaseMoney(month){
+  const totalFixMins = totalByPart(month,'fix');
+  const totalStayMins = totalByPart(month,'stay');
+  const effectiveHourlyRate = getEffectiveHourlyRate();
+  const effectiveMinimumEmploymentIls = getEffectiveMinimumEmploymentIls();
+  const baseHoursAndStayMoney = ((totalFixMins + totalStayMins) / 60) * effectiveHourlyRate;
+  return Math.max(effectiveMinimumEmploymentIls, baseHoursAndStayMoney);
+}
 function refreshMonthMeta(month){
   month.flightsCount = month.flights.filter(f=>routeIsActivity(f.route)).length;
   const standbyDateSet = new Set();
@@ -2648,17 +2888,9 @@ function refreshMonthMeta(month){
     if (routeIsStandby(f.route) && f.date) standbyDateSet.add(f.date);
     month.miluimDays += Number(finalValue(f.parts.miluim) || 0);
   });
+  const activityMap = buildActivityDayIncrementMap(month);
   const logicalFlights = getFlightsInLogicalSequence(month);
-  let activityDaysTotal = 0;
-  let prevStandbyL = 0;
-  logicalFlights.forEach((current, idx) => {
-    ensureFlightShape(current);
-    const prevFlight = idx > 0 ? logicalFlights[idx - 1] : null;
-    const nextFlight = idx < logicalFlights.length - 1 ? logicalFlights[idx + 1] : null;
-    const standbyL = calculateStandbyL(current, prevFlight, nextFlight, prevStandbyL);
-    activityDaysTotal += calculateActivityIncrement(current, prevFlight, nextFlight, standbyL);
-    prevStandbyL = standbyL;
-  });
+  const activityDaysTotal = logicalFlights.reduce((sum, flight) => sum + Number(activityMap.get(String(flight.id)) || 0), 0);
   month.activityDays = activityDaysTotal;
   month.standbyDays = standbyDateSet.size;
 }
@@ -2672,11 +2904,10 @@ function recomputeMonthComp(month){
   month.payableHours = toHHMM(basePayableMins);
   month.onTopHours = toHHMM(onTopMins);
   month.totalSalaryHours = toHHMM(basePayableMins + onTopMins);
+  const guaranteedBaseMoney = getMonthGuaranteedBaseMoney(month);
   const effectiveHourlyRate = getEffectiveHourlyRate();
-  const effectiveMinimumEmploymentIls = getEffectiveMinimumEmploymentIls();
-  const baseHoursAndStayMoney = ((totalFixMins + totalStayMins) / 60) * effectiveHourlyRate;
   const onTopMoney = (onTopMins/60) * effectiveHourlyRate;
-  month.finalSalaryIls = Math.max(effectiveMinimumEmploymentIls, baseHoursAndStayMoney) + onTopMoney;
+  month.finalSalaryIls = guaranteedBaseMoney + onTopMoney;
 }
 function getFlightDateNumber(dateStr){
   const m = String(dateStr||'').match(/^(\d{1,2})\.(\d{1,2})$/);
@@ -2706,6 +2937,7 @@ function recalcMonthFromFlightChange(month){
     ? getSortedFlightsForMonth(month)
     : sortFlightsChronologically(month.flights);
   applyMonthRouteSequenceMeta(month);
+  const activityMap = buildActivityDayIncrementMap(month);
   let cumulativeDays = 0;
   let prevStandbyL = 0;
   month.flights.forEach((f, idx) => {
@@ -2713,7 +2945,7 @@ function recalcMonthFromFlightChange(month){
     const prevFlight = idx>0 ? month.flights[idx-1] : null;
     const nextFlight = idx<month.flights.length-1 ? month.flights[idx+1] : null;
     const standbyL = calculateStandbyL(f, prevFlight, nextFlight, prevStandbyL);
-    const activityIncrement = calculateActivityIncrement(f, prevFlight, nextFlight, standbyL);
+    const activityIncrement = Number(activityMap.get(String(f.id)) || 0);
     cumulativeDays += activityIncrement;
     recalcSingleFlightAuto(f,{prevFlight,nextFlight,cumulativeDays,standbyL,monthName: month.monthName});
     prevStandbyL = standbyL;
@@ -2784,7 +3016,56 @@ function resetToCalc(monthName,flightId,key){
 }
 function toggleFlight(id){ ui.openFlights[id] = !ui.openFlights[id]; render(); }
 function toggleMonth(name){ ui.openMonths[name] = !ui.openMonths[name]; render(); }
+function toggleNewMonthForm(){ ui.newMonthFormOpen = !ui.newMonthFormOpen; render(); }
 function toggleNewFlightForm(){ ui.newFlightFormOpen = !ui.newFlightFormOpen; render(); }
+const appConfirmState = { resolve: null };
+function shouldUseCustomConfirm(){
+  return !!window.matchMedia && window.matchMedia('(max-width:680px)').matches;
+}
+function isMobileViewport(){
+  return !!window.matchMedia && window.matchMedia('(max-width:680px)').matches;
+}
+function closeAppConfirm(result){
+  const overlay = document.getElementById('appConfirmOverlay');
+  if (overlay) overlay.classList.remove('open');
+  const resolve = appConfirmState.resolve;
+  appConfirmState.resolve = null;
+  if (resolve) resolve(!!result);
+}
+function ensureAppConfirmDialog(){
+  let overlay = document.getElementById('appConfirmOverlay');
+  if (overlay) return overlay;
+  overlay = document.createElement('div');
+  overlay.id = 'appConfirmOverlay';
+  overlay.className = 'confirm-overlay';
+  overlay.innerHTML = `
+    <div class="confirm-dialog" role="dialog" aria-modal="true" aria-labelledby="appConfirmTitle">
+      <div id="appConfirmTitle" class="confirm-title">אישור פעולה</div>
+      <p id="appConfirmText" class="confirm-text"></p>
+      <div class="confirm-actions">
+        <button type="button" class="btn soft" id="appConfirmCancelBtn">ביטול</button>
+        <button type="button" class="btn primary" id="appConfirmOkBtn">אישור</button>
+      </div>
+    </div>
+  `;
+  overlay.addEventListener('click', event => {
+    if (event.target === overlay) closeAppConfirm(false);
+  });
+  document.body.appendChild(overlay);
+  overlay.querySelector('#appConfirmCancelBtn')?.addEventListener('click', () => closeAppConfirm(false));
+  overlay.querySelector('#appConfirmOkBtn')?.addEventListener('click', () => closeAppConfirm(true));
+  return overlay;
+}
+function requestAppConfirm(message){
+  if (!shouldUseCustomConfirm()) return Promise.resolve(window.confirm(message));
+  const overlay = ensureAppConfirmDialog();
+  const text = overlay.querySelector('#appConfirmText');
+  if (text) text.textContent = message || '';
+  overlay.classList.add('open');
+  return new Promise(resolve => {
+    appConfirmState.resolve = resolve;
+  });
+}
 function createMonth(){
   const el = document.getElementById('newMonthName');
   const msg = document.getElementById('monthCreateMsg');
@@ -2796,6 +3077,13 @@ function createMonth(){
   el.value = '';
   msg.textContent = `נוצר חודש חדש: ${name}`;
   render();
+}
+function renderTechTimeField(label, inputId, value, monthName, flightId){
+  const safeValue = String(value || '');
+  return `<div class="field time-pair">
+          <div class="label">${label}</div>
+          <input id="${inputId}" class="input" type="time" step="60" inputmode="numeric" value="${escapeHtml(safeValue)}" oninput="syncFlightBlockFromTechInputs('${escapeJs(monthName)}','${flightId}')" onchange="syncFlightBlockFromTechInputs('${escapeJs(monthName)}','${flightId}')" onblur="syncFlightBlockFromTechInputs('${escapeJs(monthName)}','${flightId}')">
+        </div>`;
 }
 function createFlight(){
   const msg = document.getElementById('flightCreateMsg');
@@ -2832,27 +3120,29 @@ function createFlight(){
   markInputInvalid(document.getElementById('flightRoute'), false);
   markInputInvalid(document.getElementById('flightAircraft'), false);
   render();
+  alert('נפתחה טיסה חדשה');
 }
 
-function deleteFlight(monthName, flightId){
+async function deleteFlight(monthName, flightId){
   const month = model.months.find(m=>m.monthName===monthName); if(!month) return;
   const flight = month.flights.find(f=>f.id===flightId); if(!flight) return;
   const label = `${flight.date || ''} ${flight.route || ''}`.trim();
-  const ok = window.confirm(`למחוק את הטיסה ${label}?`);
-  if (!ok) return;
+  const ok = await requestAppConfirm(`למחוק את הטיסה ${label}?`);
+  if (!ok) return false;
   month.flights = month.flights.filter(f=>f.id!==flightId);
   delete ui.openFlights[flightId];
   if (ui.editing && String(ui.editing).startsWith(`${flightId}:`)) ui.editing = null;
   Object.keys(ui.drafts).forEach(k => { if (k.startsWith(`${flightId}:`)) delete ui.drafts[k]; });
   recalcMonthFromFlightChange(month);
   render();
+  return true;
 }
 
-function deleteMonth(monthName){
+async function deleteMonth(monthName){
   const month = model.months.find(m=>m.monthName===monthName); if(!month) return;
   const label = `${month.monthName || ''}`.trim();
-  const ok = window.confirm(`למחוק את החודש ${label}? כל הטיסות שבתוכו יימחקו.`);
-  if (!ok) return;
+  const ok = await requestAppConfirm(`למחוק את החודש ${label}? כל הטיסות שבתוכו יימחקו.`);
+  if (!ok) return false;
   month.flights.forEach(f => {
     delete ui.openFlights[f.id];
     if (ui.editing && String(ui.editing).startsWith(`${f.id}:`)) ui.editing = null;
@@ -2864,6 +3154,7 @@ function deleteMonth(monthName){
     ui.screen = 'payroll';
   }
   render();
+  return true;
 }
 
 function readFlightTechValues(flightId){
@@ -2880,6 +3171,19 @@ function readFlightTechValues(flightId){
     sequenceNumber: String(document.getElementById(`tech-sequence-${flightId}`)?.value||'').trim()
   };
 }
+function applyTechTimeValuesToInputs(flightId, values){
+  const mapping = {
+    dep1: `tech-dep1-${flightId}`,
+    arr1: `tech-arr1-${flightId}`,
+    dep2: `tech-dep2-${flightId}`,
+    arr2: `tech-arr2-${flightId}`
+  };
+  Object.entries(mapping).forEach(([key, inputId]) => {
+    const el = document.getElementById(inputId);
+    if (!el) return;
+    el.value = String(values?.[key] || '');
+  });
+}
 function syncFlightBlockFromTechInputs(monthName, flightId){
   const month = model.months.find(m=>m.monthName===monthName); if(!month) return;
   const flight = month.flights.find(f=>f.id===flightId); if(!flight) return;
@@ -2892,6 +3196,10 @@ function syncFlightBlockFromTechInputs(monthName, flightId){
   flight.arr1 = values.arr1;
   flight.dep2 = values.dep2;
   flight.arr2 = values.arr2;
+  if (isMobileViewport()) {
+    applyTechTimeValuesToInputs(flightId, values);
+    return;
+  }
   recalcMonthFromFlightChange(month);
   render();
 }
@@ -2981,10 +3289,10 @@ function renderTechEditor(monthName,f){
           ${usesMonthlySequenceOrdering(monthName) ? `<div class="field sequence-field"><div class="label">מס׳ רץ חודשי</div><input id="tech-sequence-${f.id}" class="input tech-sequence-input" inputmode="numeric" value="${escapeHtml(String(getFlightSequenceNumber(f, 0)))}"></div>` : '<div class="field sequence-field"></div>'}
           <div class="field dh-field"><div class="label">DH</div><label class="tech-dh-label"><input id="tech-dh-${f.id}" type="checkbox" ${containsDhNote(f.note) ? 'checked' : ''}><span>טיסת DH</span></label></div>
         </div>
-        <div class="field time-pair"><div class="label">המראה 1</div><input id="tech-dep1-${f.id}" class="input" type="time" step="60" value="${escapeHtml(f.dep1||'')}" onchange="syncFlightBlockFromTechInputs('${escapeJs(monthName)}','${f.id}')"></div>
-        <div class="field time-pair"><div class="label">נחיתה 1</div><input id="tech-arr1-${f.id}" class="input" type="time" step="60" value="${escapeHtml(f.arr1||'')}" onchange="syncFlightBlockFromTechInputs('${escapeJs(monthName)}','${f.id}')"></div>
-        <div class="field time-pair"><div class="label">המראה 2</div><input id="tech-dep2-${f.id}" class="input" type="time" step="60" value="${escapeHtml(f.dep2||'')}" onchange="syncFlightBlockFromTechInputs('${escapeJs(monthName)}','${f.id}')"></div>
-        <div class="field time-pair"><div class="label">נחיתה 2</div><input id="tech-arr2-${f.id}" class="input" type="time" step="60" value="${escapeHtml(f.arr2||'')}" onchange="syncFlightBlockFromTechInputs('${escapeJs(monthName)}','${f.id}')"></div>
+        ${renderTechTimeField('המראה 1', `tech-dep1-${f.id}`, f.dep1 || '', monthName, f.id)}
+        ${renderTechTimeField('נחיתה 1', `tech-arr1-${f.id}`, f.arr1 || '', monthName, f.id)}
+        ${renderTechTimeField('המראה 2', `tech-dep2-${f.id}`, f.dep2 || '', monthName, f.id)}
+        ${renderTechTimeField('נחיתה 2', `tech-arr2-${f.id}`, f.arr2 || '', monthName, f.id)}
         <div class="field change-field"><div class="label">שינוי</div><input id="tech-change-${f.id}" class="input" inputmode="numeric" placeholder="4 / 6" value="${escapeHtml(displayChangeCode(f.changeCode))}"></div>
       </div>
       <div class="actions">
@@ -3028,34 +3336,34 @@ function renderMonth(month){
           </div>
           <div class="summary-grid">
             <div class="summary-box"><div class="k">סה״כ שעות בלוק</div><div class="v">${totalBlock(month)}</div></div>
-            <div class="summary-box"><div class="k">סה״כ שעות לתשלום</div><div class="v">${totalPayable(month)}</div></div>
+            <div class="summary-box"><div class="k">שעות לתשלום</div><div class="v">${getMonthBasePayableHours(month)}</div></div>
             <div class="summary-box"><div class="k">כמות טיסות</div><div class="v">${month.flightsCount}</div></div>
             <div class="summary-box"><div class="k">ימי פעילות</div><div class="v">${month.activityDays}</div></div>
             <div class="summary-box"><div class="k">ימי סטנדביי</div><div class="v">${month.standbyDays}</div></div>
             <div class="summary-box"><div class="k">ימי מילואים</div><div class="v">${month.miluimDays}</div></div>
             <div class="summary-box"><div class="k">אשל — ימים</div><div class="v">${month.eshelDays}</div></div>
-            <div class="summary-box"><div class="k">אשל בכסף</div><div class="v">${formatUsd(month.eshelUsd)}</div></div>
+            <div class="summary-box"><div class="k">אשל</div><div class="v">${formatUsd(month.eshelUsd)}</div></div>
           </div>
         </div>
         <div class="summary-group">
           <div class="group-title">תוספות ומאיצים</div>
           <div class="summary-grid">
-            <div class="summary-box"><div class="k">שבת</div><div class="v">${toHHMM(totalByPart(month,'shabbat'))}</div></div>
-            <div class="summary-box"><div class="k">תשלום שהייה</div><div class="v">${toHHMM(totalByPart(month,'stay'))}</div></div>
-            <div class="summary-box"><div class="k">מאיץ ימים</div><div class="v">${toHHMM(totalByPart(month,'daysB'))}</div></div>
-            <div class="summary-box ${hasHoursBIntegrityMismatch(month) ? 'alert' : ''}"><div class="k">מאיץ שעות</div><div class="v">${toHHMM(totalByPart(month,'hoursB'))}</div></div>
-            <div class="summary-box"><div class="k">תשלום שינוי</div><div class="v">${toHHMM(totalByPart(month,'changePay'))}</div></div>
-            <div class="summary-box"><div class="k">נוספות</div><div class="v">${toHHMM(totalByPart(month,'extras'))}</div></div>
-            <div class="summary-box"><div class="k">קיזוז מאיץ</div><div class="v">${toHHMM(totalByPart(month,'offset'))}</div></div>
-            <div class="summary-box"><div class="k">בסיס שעות חודשי</div><div class="v">${month.baseHours || '00:00'}</div></div>
+            <div class="summary-box fix-hours-box"><div class="k">סהכ שעות פיקס</div><div class="v">${month.baseHours || '00:00'}</div></div>
+            <div class="summary-box stay-pay-box"><div class="k">תשלום שהייה</div><div class="v">${toHHMM(totalByPart(month,'stay'))}</div></div>
+            <div class="summary-box green-soft accel-days-box"><div class="k">מאיץ ימים</div><div class="v">${toHHMM(totalByPart(month,'daysB'))}</div></div>
+            <div class="summary-box green-soft accel-hours-box"><div class="k">מאיץ שעות</div><div class="v">${toHHMM(totalByPart(month,'hoursB'))}</div></div>
+            <div class="summary-box shabbat-box"><div class="k">שבת</div><div class="v">${toHHMM(totalByPart(month,'shabbat'))}</div></div>
+            <div class="summary-box offset-soft offset-box"><div class="k">קיזוז מאיץ</div><div class="v">${toHHMM(totalByPart(month,'offset'))}</div></div>
+            <div class="summary-box green-soft extras-box"><div class="k">נוספות</div><div class="v">${toHHMM(totalByPart(month,'extras'))}</div></div>
+            <div class="summary-box green-soft change-pay-box"><div class="k">תשלום שינוי</div><div class="v">${toHHMM(totalByPart(month,'changePay'))}</div></div>
           </div>
         </div>
-        <div class="summary-group">
-          <div class="group-title">מינימום משרה, On Top וסה״כ שכר</div>
+        <div class="summary-group" style="margin-bottom:18px">
+          <div class="group-title">סיכום חודש</div>
           <div class="summary-grid">
-            <div class="summary-box"><div class="k">מינימום משרה</div><div class="v">${formatIls(getEffectiveMinimumEmploymentIls())}</div></div>
+            <div class="summary-box"><div class="k">מינימום משרה</div><div class="v">${formatIls(getMonthGuaranteedBaseMoney(month))}</div></div>
             <div class="summary-box"><div class="k">On Top</div><div class="v">${formatIls(getMonthOnTopMoney(month))}</div></div>
-            <div class="summary-box"><div class="k">שעות לתשלום</div><div class="v">${getMonthBasePayableHours(month)}</div></div>
+            <div class="summary-box"><div class="k">סה״כ שעות לתשלום</div><div class="v">${totalPayable(month)}</div></div>
             <div class="summary-box summary-total"><div class="k">סה״כ שכר</div><div class="v">${formatIls(month.finalSalaryIls)}</div></div>
           </div>
         </div>
@@ -3141,6 +3449,7 @@ const LOGBOOK_IMPORTED_ROWS_SHMULIK = [{"key":"2024-07-15__shmulik_row15","seria
 
 function getActiveImportedLogbookRows(){
   const activeAppId = (typeof CLOUD_APP_ID === 'string' ? CLOUD_APP_ID : 'arkia-pay-main');
+  if (activeAppId === 'arkia-pay-test') return LOGBOOK_IMPORTED_ROWS_SHMULIK;
   return activeAppId === 'arkia-pay-shmulik' ? LOGBOOK_IMPORTED_ROWS_SHMULIK : LOGBOOK_IMPORTED_ROWS_ARIK;
 }
 
@@ -3334,6 +3643,34 @@ function buildPdfRangeLabel(fromDate, toDate){
   if (toDate) return `Until ${formatLogbookDateDisplay(toDate)}`;
   return 'All flights';
 }
+function addPdfHebrewHeaderImage(doc, lines, x, y, widthMm){
+  const cleanLines = (lines || []).map(line => String(line || '').trim()).filter(Boolean);
+  if (!cleanLines.length) return 0;
+  const scale = 2;
+  const widthPx = 560;
+  const lineHeightPx = 34;
+  const paddingPx = 18;
+  const heightPx = (cleanLines.length * lineHeightPx) + (paddingPx * 2);
+  const canvas = document.createElement('canvas');
+  canvas.width = widthPx * scale;
+  canvas.height = heightPx * scale;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return 0;
+  ctx.scale(scale, scale);
+  ctx.clearRect(0, 0, widthPx, heightPx);
+  ctx.direction = 'rtl';
+  ctx.textAlign = 'right';
+  ctx.textBaseline = 'middle';
+  ctx.font = '700 22px Arial';
+  ctx.fillStyle = '#102033';
+  cleanLines.forEach((line, index) => {
+    const lineY = paddingPx + (lineHeightPx * index) + (lineHeightPx / 2);
+    ctx.fillText(line, widthPx - paddingPx, lineY);
+  });
+  const heightMm = widthMm * (heightPx / widthPx);
+  doc.addImage(canvas.toDataURL('image/png'), 'PNG', x, y, widthMm, heightMm);
+  return heightMm;
+}
 function exportLogbookPdf(){
   const rows = buildLogbookRows();
   const fromDate = (document.getElementById('logbookPdfFrom')?.value || ui.logbookPdfFrom || '').trim();
@@ -3365,18 +3702,30 @@ function exportLogbookPdf(){
   const totalTakeoffs = filtered.reduce((sum,row) => sum + (Number(String(row.takeoffs || '').trim() || 0) || 0), 0);
   const totalLandings = filtered.reduce((sum,row) => sum + (Number(String(row.landings || '').trim() || 0) || 0), 0);
   const rangeLabel = buildPdfRangeLabel(fromDate, toDate);
+  const pilotProfile = getPilotProfile();
+  const pdfHeaderLines = [
+    pilotProfile.pilotName ? `שם הטייס: ${pilotProfile.pilotName}` : '',
+    pilotProfile.pilotRole ? `תפקיד: ${pilotProfile.pilotRole}` : '',
+    pilotProfile.companyName ? `שם החברה: ${pilotProfile.companyName}` : ''
+  ].filter(Boolean);
 
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(16);
-  doc.text('ARKIA LOGBOOK', 12, 12);
+  const pageWidth = doc.internal.pageSize.getWidth();
+  doc.text('ARKIA LOGBOOK', pageWidth / 2, 12, { align:'center' });
   doc.setFontSize(10);
   doc.setFont('helvetica', 'normal');
-  doc.text(`Range: ${rangeLabel}`, 12, 18);
-  doc.text(`Flights: ${filtered.length}`, 12, 24);
-  doc.text(`Block: ${totalBlock}`, 52, 24);
-  doc.text(`PIC: ${totalPic}`, 86, 24);
-  doc.text(`T/O: ${totalTakeoffs}`, 116, 24);
-  doc.text(`LAND: ${totalLandings}`, 144, 24);
+  const metaStartY = 18;
+  const pilotHeaderWidth = 78;
+  const pilotHeaderX = pageWidth - 12 - pilotHeaderWidth;
+  const pilotHeaderHeight = addPdfHebrewHeaderImage(doc, pdfHeaderLines, pilotHeaderX, metaStartY - 1, pilotHeaderWidth);
+  const statsY = metaStartY + (pilotHeaderHeight || 0) + 3;
+  doc.text(`Range: ${rangeLabel}`, 12, statsY);
+  doc.text(`Flights: ${filtered.length}`, 12, statsY + 6);
+  doc.text(`Block: ${totalBlock}`, 52, statsY + 6);
+  doc.text(`PIC: ${totalPic}`, 86, statsY + 6);
+  doc.text(`T/O: ${totalTakeoffs}`, 116, statsY + 6);
+  doc.text(`LAND: ${totalLandings}`, 144, statsY + 6);
 
   const body = filtered.map(row => [
     String(row.serial || ''),
@@ -3394,7 +3743,7 @@ function exportLogbookPdf(){
   ]);
 
   doc.autoTable({
-    startY: 30,
+    startY: statsY + 12,
     margin: { left: 8, right: 8, top: 10, bottom: 12 },
     head: [['NM','DATE','TYPE','AIR CRAFT','DEP','MID','ARR','BLOCK','T/O','LAND','CREW','PIC']],
     body,
@@ -3600,7 +3949,10 @@ function getDefaultMasterData(){
     aircraftRows: cloneJson(EXCEL_MASTER_AIRCRAFT_ROWS),
     monthlyDutyRows: cloneJson(EXCEL_MONTHLY_DUTY_ROWS),
     stayRows: cloneJson(EXCEL_STAY_RULE_ROWS),
-    airportRows: cloneJson(EXCEL_AIRPORT_ROWS)
+    airportRows: cloneJson(EXCEL_AIRPORT_ROWS),
+    pilotName: '',
+    pilotRole: '',
+    companyName: 'ארקיע'
   };
 }
 function ensureMasterDataShape(data){
@@ -3613,12 +3965,47 @@ function ensureMasterDataShape(data){
     stayRows: Array.isArray(src.stayRows) ? cloneJson(src.stayRows) : defaults.stayRows,
     airportRows: Array.isArray(src.airportRows) ? cloneJson(src.airportRows) : defaults.airportRows,
     minimumEmploymentIls: Number.isFinite(Number(src.minimumEmploymentIls)) ? Number(src.minimumEmploymentIls) : DEFAULT_MINIMUM_EMPLOYMENT_ILS,
-    defaultHourlyRate: Number.isFinite(Number(src.defaultHourlyRate)) ? Number(src.defaultHourlyRate) : DEFAULT_HOURLY_RATE
+    defaultHourlyRate: Number.isFinite(Number(src.defaultHourlyRate)) ? Number(src.defaultHourlyRate) : DEFAULT_HOURLY_RATE,
+    pilotName: String(src.pilotName ?? defaults.pilotName).trim(),
+    pilotRole: String(src.pilotRole ?? defaults.pilotRole).trim(),
+    companyName: String(src.companyName ?? defaults.companyName).trim()
   };
 }
 model.masterData = ensureMasterDataShape(model.masterData);
 function getActiveMasterData(){
   return ensureMasterDataShape(model.masterData);
+}
+function getPilotProfile(){
+  const masterData = getActiveMasterData();
+  return {
+    pilotName: String(masterData.pilotName || '').trim(),
+    pilotRole: String(masterData.pilotRole || '').trim(),
+    companyName: String(masterData.companyName || '').trim()
+  };
+}
+function updateHeaderPilotMeta(){
+  const mount = document.getElementById('headerPilotMeta');
+  if (!mount) return;
+  const { pilotName, pilotRole, companyName } = getPilotProfile();
+  if (!pilotName && !pilotRole && !companyName) {
+    mount.className = 'header-pilot-meta';
+    mount.innerHTML = '';
+    return;
+  }
+  mount.className = 'header-pilot-meta visible';
+  mount.innerHTML = `
+    <div class="header-pilot-row">
+      <span class="header-pilot-label">שם הטייס:</span>
+      <span class="header-pilot-value">${escapeHtml(pilotName || '-')}</span>
+    </div>
+    <div class="header-pilot-row">
+      <span class="header-pilot-label">תפקיד:</span>
+      <span class="header-pilot-value">${escapeHtml(pilotRole || '-')}</span>
+    </div>
+    <div class="header-pilot-row">
+      <span class="header-pilot-label">חברה:</span>
+      <span class="header-pilot-value">${escapeHtml(companyName || '-')}</span>
+    </div>`;
 }
 function getMasterDataDraft(){
   if (!ui.masterDataDraft) ui.masterDataDraft = getActiveMasterData();
@@ -3796,8 +4183,20 @@ function renderMasterData(){
     { key: 'minimumEmploymentIls', label: 'מינימום משרה', value: String(source.minimumEmploymentIls ?? '') },
     { key: 'defaultHourlyRate', label: 'שכר שעה', value: String(source.defaultHourlyRate ?? '') }
   ];
+  const profileRows = [
+    { key: 'pilotName', label: 'שם הטייס', value: String(source.pilotName ?? '') },
+    { key: 'pilotRole', label: 'תפקיד', value: String(source.pilotRole ?? '') },
+    { key: 'companyName', label: 'חברה', value: String(source.companyName ?? '') }
+  ];
   const dirtyBadge = ui.masterDataDirty ? '<div class="badge">יש שינויים שלא נשמרו</div>' : '<div class="badge">תצוגה ועריכה מקומית</div>';
   mount.innerHTML = `
+    <div class="masterdata-profile-grid">
+      ${profileRows.map(row => `<div class="masterdata-profile-card">
+        <div class="masterdata-profile-label">${escapeHtml(row.label)}</div>
+        <input class="masterdata-profile-input" type="text" value="${escapeAttr(row.value)}" oninput="updateMasterDataDraftSetting('${row.key}', this.value)">
+      </div>`).join('')}
+    </div>
+
     <div class="masterdata-summary">
       <div class="masterdata-kpi"><div class="masterdata-kpi-label">נתיבים</div><div class="masterdata-kpi-value">${routeRows.length}</div></div>
       <div class="masterdata-kpi"><div class="masterdata-kpi-label">מספרי זנב</div><div class="masterdata-kpi-value">${aircraftRows.length}</div></div>
@@ -4093,7 +4492,6 @@ function renderLogbook(){
       </div>
     </section>
 
-    <div class="logbook-caption">הלוגבוק הנוכחי יובא מהאקסל כבסיס נתונים קבוע. טיסות מוצגות לפי שנים: השנה הנוכחית פתוחה תמיד, ושנים קודמות נפתחות רק בלחיצה על השנה. ייצוא ה-PDF פועל מתוך טווח התאריכים שתבחר בלבד.</div>
   `;
   mount.querySelectorAll('[data-logbook-key]').forEach(el => {
     const commitLogbookField = (target, shouldRender) => {
@@ -4139,11 +4537,16 @@ function renderLogbook(){
 function render(){
   updateRouteOptionsList();
   updateAircraftOptionsList();
+  updateHeaderPilotMeta();
   const mount = document.getElementById('mount');
+  const monthWrap = document.getElementById('newMonthFormWrap');
+  const monthBtn = document.getElementById('newMonthToggleBtn');
   const wrap = document.getElementById('newFlightFormWrap');
   const btn = document.getElementById('newFlightToggleBtn');
-  if (wrap) wrap.className = ui.newFlightFormOpen ? '' : 'collapsed';
-  if (btn) btn.textContent = ui.newFlightFormOpen ? 'סגירת טופס טיסה חדשה' : 'פתיחת טופס טיסה חדשה';
+  if (monthWrap) monthWrap.className = ui.newMonthFormOpen ? 'action-popover' : 'collapsed action-popover';
+  if (monthBtn) monthBtn.textContent = ui.newMonthFormOpen ? 'סגירת חלון חודש חדש' : 'צור חודש חדש';
+  if (wrap) wrap.className = ui.newFlightFormOpen ? 'action-popover' : 'collapsed action-popover';
+  if (btn) btn.textContent = ui.newFlightFormOpen ? 'סגירת חלון טיסה חדשה' : 'צור טיסה חדשה';
   const monthsForDisplay = [...model.months].sort((a,b) => monthSortKey(b.monthName) - monthSortKey(a.monthName));
   mount.innerHTML = monthsForDisplay.map(renderMonth).join('');
   renderLogbook();
@@ -4879,8 +5282,31 @@ const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_knNLK1qkoPyFB9ksvcj-ww_SK240kXV
 let CLOUD_APP_ID = 'arkia-pay-main';
 const USER_PROFILES = {
   arik: { label:'אריק', password:'3837', appId:'arkia-pay-arik', aliases:['arik','אריק'] },
-  shmulik: { label:'שמוליק', password:'1234', appId:'arkia-pay-shmulik', aliases:['shmulik','שמוליק'] }
+  shmulik: { label:'שמוליק', password:'1234', appId:'arkia-pay-shmulik', aliases:['shmulik','שמוליק'] },
+  test: { label:'בדיקה', password:'1111', appId:'arkia-pay-test', aliases:['בדיקה','test'], emptyState:true }
 };
+function createEmptyUserModel(){
+  return {
+    months: [],
+    masterData: ensureMasterDataShape(null)
+  };
+}
+function applyProfileBaseState(profile){
+  if (profile?.emptyState) {
+    const emptyModel = createEmptyUserModel();
+    model.months = emptyModel.months;
+    model.masterData = emptyModel.masterData;
+    ui.openMonths = {};
+    ui.openFlights = {};
+    ui.editing = null;
+    ui.drafts = {};
+    ui.newFlightFormOpen = false;
+    ui.masterDataDraft = null;
+    ui.masterDataDirty = false;
+    return;
+  }
+  model.masterData = ensureMasterDataShape(model.masterData);
+}
 const cloud = {
   client: null,
   booted: false,
@@ -5008,14 +5434,16 @@ updateFlightTech = function(monthName, flightId){
   scheduleCloudSave();
 };
 const _origDeleteFlightCloud = deleteFlight;
-deleteFlight = function(monthName, flightId){
-  _origDeleteFlightCloud(monthName, flightId);
-  scheduleCloudSave();
+deleteFlight = async function(monthName, flightId){
+  const changed = await _origDeleteFlightCloud(monthName, flightId);
+  if (changed) scheduleCloudSave();
+  return changed;
 };
 const _origDeleteMonthCloud = deleteMonth;
-deleteMonth = function(monthName){
-  _origDeleteMonthCloud(monthName);
-  scheduleCloudSave();
+deleteMonth = async function(monthName){
+  const changed = await _origDeleteMonthCloud(monthName);
+  if (changed) scheduleCloudSave();
+  return changed;
 };
 
 function setLoginError(message){
@@ -5044,6 +5472,7 @@ async function submitLogin(){
     return;
   }
   CLOUD_APP_ID = profile.appId;
+  applyProfileBaseState(profile);
   setLoginError('');
   window.scrollTo(0, 0);
   document.getElementById('loginScreen')?.classList.add('login-hidden');
