@@ -1061,6 +1061,501 @@ color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto
   }
 }
 
+/* v181.140 - mobile responsive stabilization after stacked payroll fixes */
+@media (max-width:680px){
+  .view-switch .btn{
+    min-width:0;
+    width:100%;
+  }
+
+  .header-copy{
+    min-width:0;
+  }
+
+  .header-pilot-meta{
+    width:100% !important;
+    max-width:100% !important;
+    min-width:0;
+  }
+
+  #payrollScreen .workspace-grid > .form-card > .actions > .btn.primary{
+    min-width:0;
+    width:100%;
+  }
+
+  #payrollScreen #newMonthFormWrap,
+  #payrollScreen #newFlightFormWrap{
+    width:100%;
+    max-width:100%;
+  }
+
+  #payrollScreen #newFlightFormWrap .form-grid{
+    grid-template-columns:1fr;
+  }
+
+  #payrollScreen #newFlightFormWrap .flight-logbook-grid{
+    grid-template-columns:1fr 1fr;
+  }
+
+  #payrollScreen .month-summary,
+  #payrollScreen .month-summary .details,
+  #payrollScreen .month-summary .details > .card,
+  #payrollScreen .flight,
+  #payrollScreen .flight-row{
+    max-width:100%;
+  }
+
+  #payrollScreen .month-summary .details{
+    overflow:hidden !important;
+  }
+
+  #payrollScreen .month-summary .details > .card{
+    overflow:hidden !important;
+    padding-left:6px !important;
+    padding-right:6px !important;
+  }
+
+  #payrollScreen .flight{
+    overflow:hidden !important;
+  }
+
+  #payrollScreen .list-header,
+  #payrollScreen .flight-row{
+    width:100%;
+  }
+
+  #payrollScreen .toggle{
+    justify-self:center;
+    flex-shrink:0;
+  }
+}
+
+/* v181.141 - mobile new-flight date/time sizing fix */
+@media (max-width:680px){
+  #payrollScreen #newFlightFormWrap #flightDate,
+  #payrollScreen #newFlightFormWrap #flightDep1,
+  #payrollScreen #newFlightFormWrap #flightArr1,
+  #payrollScreen #newFlightFormWrap #flightDep2,
+  #payrollScreen #newFlightFormWrap #flightArr2{
+    min-height:42px;
+    height:42px;
+    padding:8px 10px;
+    font-size:14px;
+    line-height:1.2;
+    border-radius:12px;
+  }
+
+  #payrollScreen #newFlightFormWrap #flightDep1,
+  #payrollScreen #newFlightFormWrap #flightArr1,
+  #payrollScreen #newFlightFormWrap #flightDep2,
+  #payrollScreen #newFlightFormWrap #flightArr2{
+    max-width:160px;
+  }
+
+  #payrollScreen #newFlightFormWrap .date-input-ltr{
+    text-align:center;
+  }
+}
+
+/* v181.142 - mobile new-flight form layout only */
+@media (max-width:680px){
+  #payrollScreen #newFlightFormWrap .form-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:10px 8px;
+    align-items:start;
+  }
+
+  #payrollScreen #newFlightFormWrap .new-flight-date-field{
+    grid-column:1;
+  }
+
+  #payrollScreen #newFlightFormWrap .new-flight-route-field{
+    grid-column:2 !important;
+  }
+
+  #payrollScreen #newFlightFormWrap .new-flight-aircraft-field{
+    grid-column:1;
+  }
+
+  #payrollScreen #newFlightFormWrap .new-flight-crew-field{
+    grid-column:2;
+  }
+
+  #payrollScreen #newFlightFormWrap .new-flight-dh-field{
+    grid-column:1 / -1;
+  }
+
+  #payrollScreen #newFlightFormWrap .new-flight-takeoff-landing-field{
+    grid-column:1 / -1;
+  }
+
+  #payrollScreen #newFlightFormWrap .new-flight-dep1-field{
+    grid-column:1;
+  }
+
+  #payrollScreen #newFlightFormWrap .new-flight-arr1-field{
+    grid-column:2;
+  }
+
+  #payrollScreen #newFlightFormWrap .new-flight-dep2-field{
+    grid-column:1;
+  }
+
+  #payrollScreen #newFlightFormWrap .new-flight-arr2-field{
+    grid-column:2;
+  }
+
+  #payrollScreen #newFlightFormWrap .new-flight-route-field .input,
+  #payrollScreen #newFlightFormWrap .new-flight-aircraft-field .input,
+  #payrollScreen #newFlightFormWrap .new-flight-crew-field .input,
+  #payrollScreen #newFlightFormWrap .new-flight-date-field .input,
+  #payrollScreen #newFlightFormWrap .new-flight-dep1-field .input,
+  #payrollScreen #newFlightFormWrap .new-flight-arr1-field .input,
+  #payrollScreen #newFlightFormWrap .new-flight-dep2-field .input,
+  #payrollScreen #newFlightFormWrap .new-flight-arr2-field .input{
+    width:100%;
+    max-width:none;
+  }
+
+  #payrollScreen #newFlightFormWrap .new-flight-dh-field label{
+    min-height:42px;
+    border:1px solid #ccdae8;
+    border-radius:12px;
+    background:linear-gradient(180deg,#ffffff 0%, #f9fcff 100%);
+    padding:0 12px !important;
+  }
+
+  #payrollScreen #newFlightFormWrap .flight-logbook-grid{
+    grid-template-columns:1fr 1fr;
+    gap:8px;
+  }
+
+  #payrollScreen #newFlightFormWrap .new-flight-date-field,
+  #payrollScreen #newFlightFormWrap .new-flight-route-field{
+    display:flex;
+    flex-direction:column;
+    min-width:0;
+    width:100%;
+  }
+
+  #payrollScreen #newFlightFormWrap .new-flight-date-field .label,
+  #payrollScreen #newFlightFormWrap .new-flight-route-field .label{
+    min-height:18px;
+    height:18px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+  }
+
+  #payrollScreen #newFlightFormWrap .new-flight-date-field .input,
+  #payrollScreen #newFlightFormWrap .new-flight-route-field .input{
+    flex:1 1 auto;
+    min-width:0;
+    max-width:none;
+  }
+}
+
+/* v181.144 - force equal 50/50 top row for date and route on mobile */
+@media (max-width:680px){
+  #payrollScreen #newFlightFormWrap .form-grid > .new-flight-date-field,
+  #payrollScreen #newFlightFormWrap .form-grid > .new-flight-route-field{
+    grid-column:auto !important;
+    width:100% !important;
+    max-width:100% !important;
+    min-width:0 !important;
+    margin:0 !important;
+  }
+
+  #payrollScreen #newFlightFormWrap .form-grid > .new-flight-date-field{
+    grid-column:1 / 2 !important;
+  }
+
+  #payrollScreen #newFlightFormWrap .form-grid > .new-flight-route-field{
+    grid-column:2 / 3 !important;
+  }
+
+  #payrollScreen #newFlightFormWrap .new-flight-date-field,
+  #payrollScreen #newFlightFormWrap .new-flight-route-field{
+    display:grid !important;
+    grid-template-rows:18px 42px;
+    align-content:start;
+    gap:6px;
+  }
+
+  #payrollScreen #newFlightFormWrap .new-flight-date-field .label,
+  #payrollScreen #newFlightFormWrap .new-flight-route-field .label{
+    height:18px !important;
+    min-height:18px !important;
+    margin:0 !important;
+  }
+
+  #payrollScreen #newFlightFormWrap #flightDate,
+  #payrollScreen #newFlightFormWrap #flightRouteMobile{
+    width:100% !important;
+    min-width:0 !important;
+    max-width:none !important;
+    height:42px !important;
+    min-height:42px !important;
+    margin:0 !important;
+    padding:8px 10px !important;
+    font-size:14px !important;
+    border-radius:12px !important;
+    box-sizing:border-box !important;
+  }
+
+  #payrollScreen #newFlightFormWrap #flightRouteMobile{
+    display:block;
+  }
+}
+
+/* v181.145 - normalize mobile date control to match route field exactly */
+@media (max-width:680px){
+  #payrollScreen #newFlightFormWrap .form-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+    gap:8px !important;
+  }
+
+  #payrollScreen #newFlightFormWrap .new-flight-date-field,
+  #payrollScreen #newFlightFormWrap .new-flight-route-field{
+    width:100% !important;
+    min-width:0 !important;
+    max-width:none !important;
+  }
+
+  #payrollScreen #newFlightFormWrap #flightDate,
+  #payrollScreen #newFlightFormWrap #flightRouteMobile{
+    -webkit-appearance:none !important;
+    appearance:none !important;
+    display:block !important;
+    width:100% !important;
+    min-width:0 !important;
+    max-width:none !important;
+    height:42px !important;
+    min-height:42px !important;
+    padding:8px 10px !important;
+    font-size:14px !important;
+    font-weight:700 !important;
+    line-height:24px !important;
+    border:1px solid #ccdae8 !important;
+    border-radius:12px !important;
+    background:linear-gradient(180deg,#ffffff 0%, #f9fcff 100%) !important;
+    box-sizing:border-box !important;
+  }
+
+  #payrollScreen #newFlightFormWrap #flightDate{
+    text-align:center !important;
+    letter-spacing:0 !important;
+  }
+
+  #payrollScreen #newFlightFormWrap #flightDate::-webkit-date-and-time-value{
+    text-align:center;
+  }
+
+  #payrollScreen #newFlightFormWrap #flightDate::-webkit-calendar-picker-indicator{
+    opacity:.9;
+    margin:0;
+  }
+}
+
+/* v181.146 - force equal 50/50 second row for crew and aircraft on mobile */
+@media (max-width:680px){
+  #payrollScreen #newFlightFormWrap .form-grid > .new-flight-crew-field,
+  #payrollScreen #newFlightFormWrap .form-grid > .new-flight-aircraft-field{
+    width:100% !important;
+    min-width:0 !important;
+    max-width:none !important;
+    margin:0 !important;
+  }
+
+  #payrollScreen #newFlightFormWrap .form-grid > .new-flight-crew-field{
+    grid-column:1 / 2 !important;
+  }
+
+  #payrollScreen #newFlightFormWrap .form-grid > .new-flight-aircraft-field{
+    grid-column:2 / 3 !important;
+  }
+
+  #payrollScreen #newFlightFormWrap .new-flight-crew-field,
+  #payrollScreen #newFlightFormWrap .new-flight-aircraft-field{
+    display:grid !important;
+    grid-template-rows:18px 42px;
+    align-content:start;
+    gap:6px;
+  }
+
+  #payrollScreen #newFlightFormWrap .new-flight-crew-field .label,
+  #payrollScreen #newFlightFormWrap .new-flight-aircraft-field .label{
+    height:18px !important;
+    min-height:18px !important;
+    margin:0 !important;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+  }
+
+  #payrollScreen #newFlightFormWrap #flightCrewMobile,
+  #payrollScreen #newFlightFormWrap #flightAircraftMobile{
+    -webkit-appearance:none !important;
+    appearance:none !important;
+    display:block !important;
+    width:100% !important;
+    min-width:0 !important;
+    max-width:none !important;
+    height:42px !important;
+    min-height:42px !important;
+    padding:8px 10px !important;
+    font-size:14px !important;
+    font-weight:700 !important;
+    line-height:24px !important;
+    border:1px solid #ccdae8 !important;
+    border-radius:12px !important;
+    background:linear-gradient(180deg,#ffffff 0%, #f9fcff 100%) !important;
+    box-sizing:border-box !important;
+  }
+}
+
+/* v181.147 - lock mobile new-flight fields to exact rows */
+@media (max-width:680px){
+  #payrollScreen #newFlightFormWrap .form-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+    grid-auto-flow:row !important;
+  }
+
+  #payrollScreen #newFlightFormWrap .new-flight-date-field{
+    grid-column:1 / 2 !important;
+    grid-row:1 !important;
+  }
+
+  #payrollScreen #newFlightFormWrap .new-flight-route-field{
+    grid-column:2 / 3 !important;
+    grid-row:1 !important;
+  }
+
+  #payrollScreen #newFlightFormWrap .new-flight-crew-field{
+    grid-column:1 / 2 !important;
+    grid-row:2 !important;
+  }
+
+  #payrollScreen #newFlightFormWrap .new-flight-aircraft-field{
+    grid-column:2 / 3 !important;
+    grid-row:2 !important;
+  }
+
+  #payrollScreen #newFlightFormWrap .new-flight-dh-field{
+    grid-column:1 / 2 !important;
+    grid-row:3 !important;
+    width:100% !important;
+    min-width:0 !important;
+    max-width:none !important;
+  }
+
+  #payrollScreen #newFlightFormWrap .new-flight-takeoff-landing-field{
+    grid-column:1 / -1 !important;
+    grid-row:4 !important;
+  }
+
+  #payrollScreen #newFlightFormWrap .new-flight-dep1-field{
+    grid-column:1 / 2 !important;
+    grid-row:5 !important;
+  }
+
+  #payrollScreen #newFlightFormWrap .new-flight-arr1-field{
+    grid-column:2 / 3 !important;
+    grid-row:5 !important;
+  }
+
+  #payrollScreen #newFlightFormWrap .new-flight-dep2-field{
+    grid-column:1 / 2 !important;
+    grid-row:6 !important;
+  }
+
+  #payrollScreen #newFlightFormWrap .new-flight-arr2-field{
+    grid-column:2 / 3 !important;
+    grid-row:6 !important;
+  }
+}
+
+/* v181.148 - reduce DH field to half-row width on mobile */
+@media (max-width:680px){
+  #payrollScreen #newFlightFormWrap .new-flight-dh-field{
+    display:grid !important;
+    grid-template-rows:18px 42px;
+    align-content:start;
+    gap:6px;
+  }
+
+  #payrollScreen #newFlightFormWrap .new-flight-dh-field .label{
+    height:18px !important;
+    min-height:18px !important;
+    margin:0 !important;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+  }
+
+  #payrollScreen #newFlightFormWrap .new-flight-dh-field label{
+    width:100% !important;
+    min-width:0 !important;
+    max-width:none !important;
+    box-sizing:border-box !important;
+  }
+}
+
+/* v181.149 - normalize mobile time fields to half-width cards */
+@media (max-width:680px){
+  #payrollScreen #newFlightFormWrap .new-flight-dep1-field,
+  #payrollScreen #newFlightFormWrap .new-flight-arr1-field,
+  #payrollScreen #newFlightFormWrap .new-flight-dep2-field,
+  #payrollScreen #newFlightFormWrap .new-flight-arr2-field{
+    width:100% !important;
+    min-width:0 !important;
+    max-width:none !important;
+    display:grid !important;
+    grid-template-rows:18px 42px;
+    align-content:start;
+    gap:6px;
+  }
+
+  #payrollScreen #newFlightFormWrap .new-flight-dep1-field .label,
+  #payrollScreen #newFlightFormWrap .new-flight-arr1-field .label,
+  #payrollScreen #newFlightFormWrap .new-flight-dep2-field .label,
+  #payrollScreen #newFlightFormWrap .new-flight-arr2-field .label{
+    height:18px !important;
+    min-height:18px !important;
+    margin:0 !important;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+  }
+
+  #payrollScreen #newFlightFormWrap #flightDep1,
+  #payrollScreen #newFlightFormWrap #flightArr1,
+  #payrollScreen #newFlightFormWrap #flightDep2,
+  #payrollScreen #newFlightFormWrap #flightArr2{
+    -webkit-appearance:none !important;
+    appearance:none !important;
+    display:block !important;
+    width:100% !important;
+    min-width:0 !important;
+    max-width:none !important;
+    height:42px !important;
+    min-height:42px !important;
+    padding:8px 10px !important;
+    font-size:14px !important;
+    font-weight:700 !important;
+    line-height:24px !important;
+    border:1px solid #ccdae8 !important;
+    border-radius:12px !important;
+    background:linear-gradient(180deg,#ffffff 0%, #f9fcff 100%) !important;
+    box-sizing:border-box !important;
+    text-align:center !important;
+  }
+}
+
 </style>
 </head>
 <body>
@@ -1152,39 +1647,39 @@ color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto
         </div>
         <div id="newFlightFormWrap" class="collapsed action-popover" style="margin-top:12px">
           <div class="form-grid">
-            <div class="field">
+            <div class="field new-flight-date-field">
               <div class="label">תאריך</div>
               <input id="flightDate" class="input date-input-ltr" type="date" lang="en-GB" dir="ltr">
             </div>
-            <div class="field" style="grid-column:1/-1">
+            <div class="field new-flight-route-field" style="grid-column:1/-1">
               <div class="label">נתיב</div>
               <input id="flightRoute" class="input desktop-datalist" list="routeOptionsList" autocomplete="off" placeholder="בחר נתיב מתוך הרשימה והתחל להקליד לסינון">
               <select id="flightRouteMobile" class="input mobile-picker" onchange="syncNewFlightRouteFromMobile(this.value)">
                 <option value="">בחר נתיב</option>
               </select>
             </div>
-            <div class="field">
+            <div class="field new-flight-aircraft-field">
               <div class="label">A/C</div>
               <input id="flightAircraft" class="input desktop-datalist" list="aircraftOptionsList" autocomplete="off" placeholder="בחר מספר זנב מתוך הרשימה">
               <select id="flightAircraftMobile" class="input mobile-picker" onchange="syncNewFlightAircraftFromMobile(this.value)">
                 <option value="">בחר מספר זנב</option>
               </select>
             </div>
-            <div class="field">
+            <div class="field new-flight-dh-field">
               <div class="label">DH</div>
               <label style="display:flex;align-items:center;gap:8px;height:42px;padding:0 4px;font-size:13px;font-weight:700">
                 <input id="flightDh" type="checkbox" style="width:18px;height:18px">
                 <span>סמן כטיסת DH</span>
               </label>
             </div>
-            <div class="field crew-field">
+            <div class="field crew-field new-flight-crew-field">
               <div class="label">איש צוות</div>
               <input id="flightCrew" class="input desktop-datalist" list="crewOptionsList" autocomplete="off" placeholder="בחר איש צוות מתוך הרשימה">
               <select id="flightCrewMobile" class="input mobile-picker" onchange="syncNewFlightCrewFromMobile(this.value)">
                 <option value="">בחר איש צוות</option>
               </select>
             </div>
-            <div class="field flight-logbook-row">
+            <div class="field flight-logbook-row new-flight-takeoff-landing-field">
               <div class="form-grid flight-logbook-grid">
                 <div class="field" style="gap:4px">
                   <div class="label">המראות</div>
@@ -1196,19 +1691,19 @@ color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto
                 </div>
               </div>
             </div>
-            <div class="field">
+            <div class="field new-flight-dep1-field">
               <div class="label">זמן המראה 1</div>
               <input id="flightDep1" class="input" type="time" step="60">
             </div>
-            <div class="field">
+            <div class="field new-flight-arr1-field">
               <div class="label">זמן נחיתה 1</div>
               <input id="flightArr1" class="input" type="time" step="60">
             </div>
-            <div class="field">
+            <div class="field new-flight-dep2-field">
               <div class="label">זמן המראה 2</div>
               <input id="flightDep2" class="input" type="time" step="60">
             </div>
-            <div class="field">
+            <div class="field new-flight-arr2-field">
               <div class="label">זמן נחיתה 2</div>
               <input id="flightArr2" class="input" type="time" step="60">
             </div>
@@ -1256,7 +1751,7 @@ color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto
       <div id="masterDataMount"></div>
     </div>
   </div>
-  <div class="app-version-footer">גרסה 181.139</div>
+  <div class="app-version-footer">גרסה 181.149</div>
 </div>
 
 <datalist id="routeOptionsList">
