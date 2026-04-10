@@ -2004,6 +2004,9 @@ function getEffectiveHourlyRate(){
 function getMasterDataSettingsStorageKey(appId){
   return `${MASTERDATA_SETTINGS_STORAGE_PREFIX}${String(appId || CLOUD_APP_ID || 'arkia-pay-main')}`;
 }
+function getMasterDataSnapshotStorageKey(appId){
+  return `${MASTERDATA_SETTINGS_STORAGE_PREFIX}${String(appId || CLOUD_APP_ID || 'arkia-pay-main')}:snapshot`;
+}
 function readPersistedMasterDataSettings(appId){
   try {
     const raw = localStorage.getItem(getMasterDataSettingsStorageKey(appId));
@@ -2022,6 +2025,27 @@ function readPersistedMasterDataSettings(appId){
     return null;
   }
 }
+function readPersistedMasterDataSnapshot(appId){
+  try {
+    const raw = localStorage.getItem(getMasterDataSnapshotStorageKey(appId));
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== 'object') return null;
+    if (parsed.masterData && typeof parsed.masterData === 'object') {
+      return {
+        savedAt: String(parsed.savedAt || '').trim(),
+        masterData: ensureMasterDataShape(parsed.masterData)
+      };
+    }
+    return {
+      savedAt: '',
+      masterData: ensureMasterDataShape(parsed)
+    };
+  } catch (err) {
+    console.warn('Failed reading local master data snapshot', err);
+    return null;
+  }
+}
 function persistMasterDataSettingsLocally(appId){
   try {
     const data = {
@@ -2036,6 +2060,17 @@ function persistMasterDataSettingsLocally(appId){
     console.warn('Failed persisting local master data settings', err);
   }
 }
+function persistMasterDataSnapshotLocally(appId, savedAt){
+  try {
+    const snapshot = ensureMasterDataShape(model.masterData);
+    localStorage.setItem(getMasterDataSnapshotStorageKey(appId), JSON.stringify({
+      savedAt: String(savedAt || new Date().toISOString()).trim(),
+      masterData: snapshot
+    }));
+  } catch (err) {
+    console.warn('Failed persisting local master data snapshot', err);
+  }
+}
 function applyPersistedMasterDataSettings(appId){
   const persisted = readPersistedMasterDataSettings(appId);
   if (!persisted) return;
@@ -2043,6 +2078,15 @@ function applyPersistedMasterDataSettings(appId){
     ...getActiveMasterData(),
     ...persisted
   });
+}
+function applyPersistedMasterDataSnapshot(appId){
+  const persisted = readPersistedMasterDataSnapshot(appId);
+  if (!persisted) return false;
+  model.masterData = ensureMasterDataShape({
+    ...getActiveMasterData(),
+    ...persisted.masterData
+  });
+  return true;
 }
 
 function makeEmptyParts(){
@@ -4906,6 +4950,7 @@ async function saveMasterDataChanges(){
   const draft = refreshMasterDataExcelRows(getMasterDataDraft());
   model.masterData = ensureMasterDataShape(draft);
   persistMasterDataSettingsLocally();
+  persistMasterDataSnapshotLocally();
   ui.masterDataDraft = getActiveMasterData();
   ui.masterDataDirty = false;
   updateRouteOptionsList();
@@ -6137,7 +6182,7 @@ function serializeModel(){
   payload.masterData.defaultHourlyRate = getEffectiveHourlyRate();
   return payload;
 }
-function mergeCloudModel(payload){
+function mergeCloudModel(payload, cloudUpdatedAt){
   if (!payload || !Array.isArray(payload.months)) return false;
   model.months = payload.months;
   const mergedMasterData = ensureMasterDataShape(payload.masterData || {
@@ -6146,6 +6191,7 @@ function mergeCloudModel(payload){
   });
   model.masterData = mergedMasterData;
   applyPersistedMasterDataSettings(CLOUD_APP_ID);
+  persistMasterDataSnapshotLocally(CLOUD_APP_ID, cloudUpdatedAt);
   model.months.forEach(month => {
     month.flights ||= [];
     month.flights.forEach(f => ensureFlightShape(f));
@@ -6156,22 +6202,41 @@ function mergeCloudModel(payload){
 }
 async function loadFromCloud(){
   applyPersistedMasterDataSettings(CLOUD_APP_ID);
+  const localSnapshot = readPersistedMasterDataSnapshot(CLOUD_APP_ID);
+  const localSnapshotApplied = applyPersistedMasterDataSnapshot(CLOUD_APP_ID);
   const client = initCloudClient();
-  if (!client) return false;
+  if (!client) {
+    if (localSnapshotApplied) render();
+    return localSnapshotApplied;
+  }
   cloud.loading = true;
   try {
     const { data, error } = await client
       .from('app_state')
-      .select('payload')
+      .select('payload, updated_at')
       .eq('app_id', CLOUD_APP_ID)
       .maybeSingle();
     if (error) {
       console.warn('Cloud load failed', error);
+      if (localSnapshotApplied) {
+        render();
+        return true;
+      }
       return false;
     }
     if (data && data.payload) {
-      mergeCloudModel(data.payload);
+      const cloudUpdatedAt = String(data.updated_at || '').trim();
+      const localSavedAt = String(localSnapshot?.savedAt || '').trim();
+      const preferLocalMasterData = !!(localSnapshot?.masterData && localSavedAt && cloudUpdatedAt && localSavedAt > cloudUpdatedAt);
+      const mergedPayload = preferLocalMasterData
+        ? { ...data.payload, masterData: localSnapshot.masterData }
+        : data.payload;
+      mergeCloudModel(mergedPayload, preferLocalMasterData ? localSavedAt : cloudUpdatedAt);
       cloud.loadedAtLeastOnce = true;
+      render();
+      return true;
+    }
+    if (localSnapshotApplied || applyPersistedMasterDataSnapshot(CLOUD_APP_ID)) {
       render();
       return true;
     }
@@ -6190,6 +6255,7 @@ async function saveToCloud(){
   cloud.saving = true;
   try {
     persistMasterDataSettingsLocally(CLOUD_APP_ID);
+    persistMasterDataSnapshotLocally(CLOUD_APP_ID);
     const payload = serializeModel();
     const { error } = await client
       .from('app_state')
