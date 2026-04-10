@@ -203,7 +203,13 @@ color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto
 .logbook-pill{background:#f8fafc;border:1px solid var(--line);border-radius:999px;padding:8px 12px;font-size:12px;color:var(--muted)}
 .logbook-table-wrap{overflow:hidden;border:1px solid var(--line);border-radius:16px;background:#fff}
 
-.logbook-summary{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:8px;margin-bottom:12px}
+.logbook-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-bottom:12px}
+.logbook-ftl-wrap{grid-column:1/-1;border:1px solid #cfe1f5;border-radius:16px;background:#f8fbff;padding:12px}
+.logbook-ftl-title{font-size:15px;font-weight:900;color:var(--text);direction:rtl;text-align:center;margin-bottom:8px}
+.logbook-ftl-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;direction:rtl}
+.logbook-kpi.logbook-kpi-top{border-color:var(--line) !important;background:#fff !important}
+.logbook-kpi.logbook-kpi-top .logbook-kpi-label,.logbook-kpi.logbook-kpi-top .logbook-kpi-note{color:#64748b !important}
+.logbook-kpi.logbook-kpi-top .logbook-kpi-value{color:var(--text) !important}
 .logbook-kpi{border:1px solid #bbf7d0;border-radius:14px;background:#f0fdf4;padding:10px 8px;text-align:center;display:flex;flex-direction:column;justify-content:space-between;min-height:96px}
 .logbook-kpi-label{font-size:11px;font-weight:800;color:#166534;margin-bottom:4px}
 .logbook-kpi-value{font-size:20px;font-weight:900;letter-spacing:.02em;line-height:1.1;min-height:22px;display:flex;align-items:center;justify-content:center;color:#166534}
@@ -220,6 +226,12 @@ color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto
 .logbook-year-summary::after{content:'▾';font-size:12px;color:var(--muted)}
 .logbook-year-current .logbook-year-summary::after{content:''}
 .logbook-year:not([open]) .logbook-year-summary::after{content:'▸'}
+.logbook-summary-toggle{border:1px solid var(--line);border-radius:14px;background:#fff;margin-bottom:8px;overflow:hidden}
+.logbook-summary-toggle[open]{box-shadow:0 4px 16px rgba(15,23,42,.05)}
+.logbook-summary-toggle-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;cursor:pointer;list-style:none;font-weight:900;background:#f8fafc;direction:rtl}
+.logbook-summary-toggle-head::-webkit-details-marker{display:none}
+.logbook-summary-toggle-head::after{content:'▾';font-size:12px;color:var(--muted)}
+.logbook-summary-toggle:not([open]) .logbook-summary-toggle-head::after{content:'▸'}
 .logbook-year-meta{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .logbook-year-total{font-size:12px;color:var(--muted);font-weight:700}
 .logbook-month-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;padding:12px}
@@ -311,6 +323,14 @@ color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto
 .masterdata-section-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--line)}
 .masterdata-section-title{font-size:15px;font-weight:900;color:var(--text);text-align:right}
 .masterdata-section-sub{font-size:12px;color:var(--muted);text-align:right}
+.masterdata-toggle{margin-top:18px;border:1px solid var(--line);border-radius:16px;background:#fff;overflow:hidden}
+.masterdata-toggle[open]{box-shadow:0 4px 16px rgba(15,23,42,.05)}
+.masterdata-toggle-summary{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 16px;cursor:pointer;list-style:none;background:#f8fafc}
+.masterdata-toggle-summary::-webkit-details-marker{display:none}
+.masterdata-toggle-summary::after{content:'▾';font-size:12px;color:var(--muted)}
+.masterdata-toggle:not([open]) .masterdata-toggle-summary::after{content:'▸'}
+.masterdata-toggle-head{display:flex;flex-direction:column;gap:4px;min-width:0}
+.masterdata-toggle-body{padding:14px 16px 16px}
 .masterdata-table-wrap{overflow:auto;border:1px solid var(--line);border-radius:16px;background:#fff}
 .masterdata-table{width:100%;border-collapse:separate;border-spacing:0;table-layout:fixed}
 .masterdata-table th,.masterdata-table td{padding:9px 8px;border-bottom:1px solid var(--line);text-align:center;white-space:nowrap;font-size:11px}
@@ -453,6 +473,43 @@ color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto
 #payrollScreen #newFlightFormWrap{
   max-width:640px;
   margin-inline:auto;
+}
+
+#payrollScreen #newFlightFormWrap .form-grid{
+  grid-template-columns:repeat(2, minmax(0, 1fr));
+  align-items:start;
+}
+
+#payrollScreen #newFlightFormWrap .field{
+  min-width:0;
+}
+
+#payrollScreen #newFlightFormWrap .flight-logbook-row{
+  align-self:start;
+}
+
+#payrollScreen #newFlightFormWrap .flight-logbook-grid{
+  grid-template-columns:1fr 1fr;
+  gap:8px;
+  align-items:start;
+}
+
+#payrollScreen #newFlightFormWrap .flight-logbook-grid .field .label,
+#payrollScreen #newFlightFormWrap .crew-field .label{
+  min-height:18px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+
+#payrollScreen #newFlightFormWrap .field .label{
+  text-align:center;
+}
+
+#payrollScreen #newFlightFormWrap .field .input,
+#payrollScreen #newFlightFormWrap .field label{
+  width:100%;
+  box-sizing:border-box;
 }
 
 #payrollScreen .actions{
@@ -655,16 +712,6 @@ color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto
 #payrollScreen .chipbox .k{
   font-weight:800;
   color:#64748b;
-}
-
-@media (min-width:681px){
-  #payrollScreen .chipbox .k{
-    font-size:12px;
-    text-align:center;
-    display:flex;
-    justify-content:center;
-    align-items:center;
-  }
 }
 
 #payrollScreen .display-value{
@@ -1130,6 +1177,25 @@ color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto
                 <span>סמן כטיסת DH</span>
               </label>
             </div>
+            <div class="field crew-field">
+              <div class="label">איש צוות</div>
+              <input id="flightCrew" class="input desktop-datalist" list="crewOptionsList" autocomplete="off" placeholder="בחר איש צוות מתוך הרשימה">
+              <select id="flightCrewMobile" class="input mobile-picker" onchange="syncNewFlightCrewFromMobile(this.value)">
+                <option value="">בחר איש צוות</option>
+              </select>
+            </div>
+            <div class="field flight-logbook-row">
+              <div class="form-grid flight-logbook-grid">
+                <div class="field" style="gap:4px">
+                  <div class="label">המראות</div>
+                  <input id="flightTakeoffs" class="input" type="text" inputmode="numeric" placeholder="0">
+                </div>
+                <div class="field" style="gap:4px">
+                  <div class="label">נחיתות</div>
+                  <input id="flightLandings" class="input" type="text" inputmode="numeric" placeholder="0">
+                </div>
+              </div>
+            </div>
             <div class="field">
               <div class="label">זמן המראה 1</div>
               <input id="flightDep1" class="input" type="time" step="60">
@@ -1190,7 +1256,7 @@ color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto
       <div id="masterDataMount"></div>
     </div>
   </div>
-  <div class="app-version-footer">גרסה 181.107</div>
+  <div class="app-version-footer">גרסה 181.139</div>
 </div>
 
 <datalist id="routeOptionsList">
@@ -1341,12 +1407,13 @@ color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto
   <option value="znz tlv"></option>
 </datalist>
 <datalist id="aircraftOptionsList"></datalist>
+<datalist id="crewOptionsList"></datalist>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
 <script>
-const ui = { editing: null, drafts: {}, openMonths: {}, openFlights: {}, newMonthFormOpen: false, newFlightFormOpen: false, screen: 'payroll', masterDataDraft: null, masterDataDirty: false };
+const ui = { editing: null, drafts: {}, openMonths: {}, openFlights: {}, newMonthFormOpen: false, newFlightFormOpen: false, screen: 'payroll', masterDataDraft: null, masterDataDirty: false, masterDataOpen: {} };
 const model = {
   months: [
     {
@@ -1502,6 +1569,9 @@ function makeFlight(id,row,date,route,dep1,arr1,dep2,arr2,aircraft,note){
     id,row,date,route,
     subtitle:'',dep1:dep1||'',arr1:arr1||'',dep2:dep2||'',arr2:arr2||'',
     aircraft: aircraft || '',
+    crewContact: '',
+    takeoffs: '',
+    landings: '',
     note: note || '',
     changeCode: 0,
     manualEshelDays: '',
@@ -2806,6 +2876,9 @@ function ensureFlightShape(f){
   const defaults = makeEmptyParts();
   Object.keys(defaults).forEach(k => { if (!f.parts[k]) f.parts[k] = {...defaults[k]}; });
   f.dep1 ||= ''; f.arr1 ||= ''; f.dep2 ||= ''; f.arr2 ||= ''; f.block ||= '00:00'; f.manualBlock ||= '';
+  f.crewContact = String(f.crewContact || '').trim();
+  f.takeoffs = /^\d{1,2}$/.test(String(f.takeoffs || '').trim()) ? String(f.takeoffs).trim() : '';
+  f.landings = /^\d{1,2}$/.test(String(f.landings || '').trim()) ? String(f.landings).trim() : '';
   f.changeCode = normalizeChangeCode(f.changeCode);
   f.routeTokens = Array.isArray(f.routeTokens) ? f.routeTokens : [];
   f.routeType ||= '';
@@ -2909,6 +2982,7 @@ function getMonthOnTopMinutes(month){
     + totalByPart(month,'hoursB')
     + totalByPart(month,'daysB')
     + totalByPart(month,'changePay')
+    + totalByPart(month,'extras')
     - totalByPart(month,'offset')
   );
 }
@@ -3050,12 +3124,9 @@ function saveEdit(monthName, flightId, key){
   const month = model.months.find(m=>m.monthName===monthName); if(!month) return;
   const flight = month.flights.find(f=>f.id===flightId); if(!flight) return;
   const part = flight.parts[key];
-  const val = String(getDraft(flightId,key,finalValue(part))).trim();
-  if (!val) part.manual = '';
-  else if (part.type==='time' && isValidTime(val)) part.manual = val;
-  else if (part.type==='duration' && isValidDurationHHMM(val)) part.manual = val;
-  else if (part.type==='number' && isValidNumber(val)) part.manual = val;
-  else return;
+  const normalized = normalizeManualPartValue(part, getDraft(flightId,key,finalValue(part)));
+  if (normalized === null) return;
+  part.manual = normalized;
   delete ui.drafts[draftKey(flightId,key)]; ui.editing = null;
   recalcMonthFromFlightChange(month); render();
 }
@@ -3162,7 +3233,11 @@ function createFlight(){
   const route = String(routeInput.value||'').trim();
   const aircraftInput = document.getElementById('flightAircraft');
   const aircraft = String(aircraftInput?.value||'').trim();
+  const crewInput = document.getElementById('flightCrew');
+  const crewContact = String(crewInput?.value||'').trim();
   const note = document.getElementById('flightDh')?.checked ? 'DH' : '';
+  const takeoffs = normalizeCountInput(document.getElementById('flightTakeoffs')?.value || '');
+  const landings = normalizeCountInput(document.getElementById('flightLandings')?.value || '');
   const dep1 = String(document.getElementById('flightDep1').value||'').trim();
   const arr1 = String(document.getElementById('flightArr1').value||'').trim();
   const dep2 = String(document.getElementById('flightDep2').value||'').trim();
@@ -3170,24 +3245,34 @@ function createFlight(){
   if (!date || !route) { msg.textContent = 'יש למלא תאריך ונתיב.'; markInputInvalid(routeInput, false); return; }
   if (!isKnownRoute(route)) { msg.textContent = 'יש לבחור נתיב קיים מתוך הרשימה.'; markInputInvalid(routeInput, true); return; }
   if (aircraft && !isKnownAircraft(aircraft)) { msg.textContent = 'יש לבחור A/C קיים מתוך הרשימה.'; markInputInvalid(aircraftInput, true); return; }
+  if (crewContact && !isKnownCrew(crewContact)) { msg.textContent = 'יש לבחור איש צוות קיים מתוך הרשימה.'; markInputInvalid(crewInput, true); return; }
   markInputInvalid(routeInput, false);
   markInputInvalid(aircraftInput, false);
+  markInputInvalid(crewInput, false);
   if ((dep1 && !isValidTime(dep1)) || (arr1 && !isValidTime(arr1)) || (dep2 && !isValidTime(dep2)) || (arr2 && !isValidTime(arr2))) { msg.textContent = 'פורמט הזמנים חייב להיות HH:MM.'; return; }
   const month = ensureMonthForDate(flightDateInputValue); if(!month){ msg.textContent='לא ניתן לזהות חודש מתוך התאריך.'; return; }
   const monthName = month.monthName;
   const flight = makeFlight(`manual-${Date.now()}`, 'חדש', date, route, dep1, arr1, dep2, arr2, aircraft, note);
+  flight.crewContact = crewContact;
+  flight.takeoffs = takeoffs;
+  flight.landings = landings;
   if (usesMonthlySequenceOrdering(monthName)) flight.sequenceNumber = getNextMonthSequenceNumber(month);
   month.flights.push(flight);
   ui.openMonths[monthName] = true;
   ui.openFlights[flight.id] = true;
   recalcMonthFromFlightChange(month);
   msg.textContent = `נוצרה טיסה חדשה בחודש ${monthName}`;
-  ['flightDate','flightRoute','flightAircraft','flightDep1','flightArr1','flightDep2','flightArr2'].forEach(id => document.getElementById(id).value = '');
+  ['flightDate','flightRoute','flightAircraft','flightCrew','flightTakeoffs','flightLandings','flightDep1','flightArr1','flightDep2','flightArr2'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
   const flightDhEl = document.getElementById('flightDh'); if (flightDhEl) flightDhEl.checked = false;
   const routeMobile = document.getElementById('flightRouteMobile'); if (routeMobile) routeMobile.value = '';
   const aircraftMobile = document.getElementById('flightAircraftMobile'); if (aircraftMobile) aircraftMobile.value = '';
+  const crewMobile = document.getElementById('flightCrewMobile'); if (crewMobile) crewMobile.value = '';
   markInputInvalid(document.getElementById('flightRoute'), false);
   markInputInvalid(document.getElementById('flightAircraft'), false);
+  markInputInvalid(document.getElementById('flightCrew'), false);
   render();
   alert('נפתחה טיסה חדשה');
 }
@@ -3275,6 +3360,19 @@ function syncFlightBlockFromTechInputs(monthName, flightId){
 function updateFlightTech(monthName, flightId){
   const month = model.months.find(m=>m.monthName===monthName); if(!month) return;
   const flight = month.flights.find(f=>f.id===flightId); if(!flight) return;
+  for (const [partKey, part] of Object.entries(flight.parts || {})) {
+    const keyId = draftKey(flightId, partKey);
+    if (!Object.prototype.hasOwnProperty.call(ui.drafts, keyId)) continue;
+    const draftValue = ui.drafts[keyId];
+    const normalized = normalizeManualPartValue(part, draftValue);
+    if (normalized === null) {
+      ui.drafts[keyId] = String(draftValue ?? '').trim();
+      render();
+      return;
+    }
+    part.manual = normalized;
+    delete ui.drafts[keyId];
+  }
   const routeInput = document.getElementById(`tech-route-${flightId}`);
   const values = readFlightTechValues(flightId);
   const aircraftInput = document.getElementById(`tech-aircraft-${flightId}`);
@@ -3306,11 +3404,7 @@ function updateFlightTech(monthName, flightId){
 function renderEditablePart(monthName, flightId, key, part){
   const display = finalValue(part);
   const currentValue = getDraft(flightId,key,display);
-  const invalid = (
-    (part.type==='time' && currentValue && !isValidTime(currentValue)) ||
-    (part.type==='duration' && currentValue && !isValidDurationHHMM(currentValue)) ||
-    (part.type==='number' && currentValue && !isValidNumber(currentValue))
-  );
+  const invalid = currentValue ? normalizeManualPartValue(part, currentValue) === null : false;
   const month = model.months.find(m=>m.monthName===monthName);
   const flight = month?.flights.find(f=>f.id===flightId);
   const isShabbat = key === 'shabbat';
@@ -3562,6 +3656,31 @@ function isValidDurationHHMM(v){
   if (!m) return false;
   return Number(m[2]) < 60;
 }
+function normalizeDurationHHMM(v){
+  const s = String(v || '').trim();
+  if (!s) return '';
+  if (isValidDurationHHMM(s)) {
+    const [hours, minutes] = s.split(':');
+    const padLength = hours.length >= 3 ? 3 : 2;
+    return `${String(Number(hours)).padStart(padLength, '0')}:${minutes}`;
+  }
+  if (/^\d{1,3}$/.test(s)) {
+    const padLength = s.length >= 3 ? 3 : 2;
+    return `${String(Number(s)).padStart(padLength, '0')}:00`;
+  }
+  return '';
+}
+function normalizeManualPartValue(part, rawValue){
+  const value = String(rawValue ?? '').trim();
+  if (!value) return '';
+  if (part?.type === 'time') return isValidTime(value) ? value : null;
+  if (part?.type === 'duration') {
+    const normalized = normalizeDurationHHMM(value);
+    return normalized || null;
+  }
+  if (part?.type === 'number') return isValidNumber(value) ? value : null;
+  return null;
+}
 function findFlightByLogbookPayrollKey(key){
   const normalizedKey = String(key || '').trim();
   if (!normalizedKey.startsWith('payroll-')) return null;
@@ -3629,9 +3748,9 @@ function buildPayrollLogbookBaseRows(){
         mid: meta.mid || '',
         arr: meta.arr || '',
         block: flight.block || '00:00',
-        takeoffs: '',
-        landings: '',
-        rem: '',
+        takeoffs: String(flight.takeoffs || '').trim(),
+        landings: String(flight.landings || '').trim(),
+        rem: String(flight.crewContact || '').trim(),
         pic: flight.block || '00:00',
         monthName: month.monthName,
         sequenceNumber: getFlightSequenceNumber(flight, 0)
@@ -3687,10 +3806,10 @@ function buildLogbookRows(){
       monthName: baseRow.monthName || '',
       sequenceNumber: Number(baseRow.sequenceNumber || 0),
       block: (manual.block || baseRow.block || '00:00'),
-      takeoffs: manual.takeoffs || '',
-      landings: manual.landings || '',
-      rem: manual.rem || '',
-      pic: manual.pic || getDefaultLogbookPic(baseRow)
+      takeoffs: String(manual.takeoffs || '').trim() !== '' ? manual.takeoffs : String(baseRow.takeoffs || ''),
+      landings: String(manual.landings || '').trim() !== '' ? manual.landings : String(baseRow.landings || ''),
+      rem: String(manual.rem || '').trim() !== '' ? manual.rem : String(baseRow.rem || ''),
+      pic: String(manual.pic || '').trim() !== '' ? manual.pic : getDefaultLogbookPic(baseRow)
     };
   });
 
@@ -4036,6 +4155,7 @@ function getDefaultMasterData(){
   return {
     routeRows: cloneJson(EXCEL_MASTER_ROUTE_ROWS),
     aircraftRows: cloneJson(EXCEL_MASTER_AIRCRAFT_ROWS),
+    crewRows: [],
     monthlyDutyRows: cloneJson(EXCEL_MONTHLY_DUTY_ROWS),
     stayRows: cloneJson(EXCEL_STAY_RULE_ROWS),
     airportRows: cloneJson(EXCEL_AIRPORT_ROWS),
@@ -4050,6 +4170,7 @@ function ensureMasterDataShape(data){
   return {
     routeRows: Array.isArray(src.routeRows) ? cloneJson(src.routeRows) : defaults.routeRows,
     aircraftRows: Array.isArray(src.aircraftRows) ? cloneJson(src.aircraftRows) : defaults.aircraftRows,
+    crewRows: Array.isArray(src.crewRows) ? cloneJson(src.crewRows) : defaults.crewRows,
     monthlyDutyRows: Array.isArray(src.monthlyDutyRows) ? cloneJson(src.monthlyDutyRows) : defaults.monthlyDutyRows,
     stayRows: Array.isArray(src.stayRows) ? cloneJson(src.stayRows) : defaults.stayRows,
     airportRows: Array.isArray(src.airportRows) ? cloneJson(src.airportRows) : defaults.airportRows,
@@ -4106,6 +4227,7 @@ function normalizeMasterDataRowNumbers(rows, startAt){
 function refreshMasterDataExcelRows(masterData){
   masterData.routeRows = normalizeMasterDataRowNumbers(masterData.routeRows || [], 2);
   masterData.aircraftRows = normalizeMasterDataRowNumbers(masterData.aircraftRows || [], 3);
+  masterData.crewRows = normalizeMasterDataRowNumbers(masterData.crewRows || [], 3);
   masterData.monthlyDutyRows = normalizeMasterDataRowNumbers(masterData.monthlyDutyRows || [], 12);
   masterData.stayRows = normalizeMasterDataRowNumbers(masterData.stayRows || [], 25);
   masterData.airportRows = normalizeMasterDataRowNumbers(masterData.airportRows || [], 3);
@@ -4145,6 +4267,9 @@ function getEffectiveRouteRows(){
 function getEffectiveAircraftRows(){
   return getActiveMasterData().aircraftRows.slice();
 }
+function getEffectiveCrewRows(){
+  return getActiveMasterData().crewRows.slice();
+}
 function getEffectiveMonthlyDutyRows(){
   return getActiveMasterData().monthlyDutyRows.slice();
 }
@@ -4181,6 +4306,19 @@ function updateAircraftOptionsList(){
     mobileSelect.value = tails.includes(current) ? current : '';
   }
 }
+function updateCrewOptionsList(){
+  const crewValues = getEffectiveCrewRows()
+    .map(row => String(row.name || '').trim())
+    .filter(Boolean);
+  const datalist = document.getElementById('crewOptionsList');
+  if (datalist) datalist.innerHTML = crewValues.map(name => `<option value="${escapeAttr(name)}"></option>`).join('');
+  const mobileSelect = document.getElementById('flightCrewMobile');
+  if (mobileSelect){
+    const current = String(document.getElementById('flightCrew')?.value || '').trim();
+    mobileSelect.innerHTML = `<option value="">בחר איש צוות</option>` + crewValues.map(name => `<option value="${escapeAttr(name)}">${escapeHtml(name)}</option>`).join('');
+    mobileSelect.value = crewValues.includes(current) ? current : '';
+  }
+}
 function syncNewFlightRouteFromMobile(value){
   const input = document.getElementById('flightRoute');
   if (input) input.value = String(value || '').trim();
@@ -4191,14 +4329,27 @@ function syncNewFlightAircraftFromMobile(value){
   if (input) input.value = String(value || '').trim();
   markInputInvalid(input, false);
 }
+function syncNewFlightCrewFromMobile(value){
+  const input = document.getElementById('flightCrew');
+  if (input) input.value = String(value || '').trim();
+  markInputInvalid(input, false);
+}
 function isKnownAircraft(value){
   const typed = String(value || '').trim().toLowerCase();
   if (!typed) return false;
   return getEffectiveAircraftRows().some(row => String(row.tail || '').trim().toLowerCase() === typed);
 }
+function isKnownCrew(value){
+  const typed = String(value || '').trim().toLowerCase();
+  if (!typed) return false;
+  return getEffectiveCrewRows().some(row => String(row.name || '').trim().toLowerCase() === typed);
+}
 
 function getMasterDataRows(){
   return getEffectiveRouteRows();
+}
+function normalizeCountInput(value){
+  return String(value || '').replace(/[^0-9]/g, '').slice(0, 2);
 }
 function updateMasterDataDraftField(section, index, field, value){
   const draft = getMasterDataDraft();
@@ -4212,11 +4363,25 @@ function updateMasterDataDraftSetting(field, value){
   draft[field] = value;
   ui.masterDataDirty = true;
 }
+function isMasterDataSectionOpen(section){
+  return !!ui.masterDataOpen?.[section];
+}
+function bindMasterDataToggleState(mount){
+  if (!mount) return;
+  mount.querySelectorAll('details[data-masterdata-section]').forEach(el => {
+    const section = el.getAttribute('data-masterdata-section');
+    if (!section) return;
+    el.addEventListener('toggle', () => {
+      ui.masterDataOpen[section] = el.open;
+    });
+  });
+}
 function addMasterDataRow(section){
   const draft = refreshMasterDataExcelRows(getMasterDataDraft());
   const emptyRows = {
     routeRows: { excelRow: 0, route:'', fix:'', dep:'', mid:'', arr:'' },
     aircraftRows: { excelRow: 0, tail:'' },
+    crewRows: { excelRow: 0, name:'' },
     monthlyDutyRows: { excelRow: 0, month:'', days:'' },
     stayRows: { excelRow: 0, from:'', to:'', pay:'' },
     airportRows: { excelRow: 0, code:'' }
@@ -4225,6 +4390,7 @@ function addMasterDataRow(section){
   draft[section].push({ ...emptyRows[section] });
   refreshMasterDataExcelRows(draft);
   ui.masterDataDirty = true;
+  ui.masterDataOpen[section] = true;
   renderMasterData();
 }
 function removeMasterDataRow(section, index){
@@ -4233,6 +4399,7 @@ function removeMasterDataRow(section, index){
   draft[section].splice(index, 1);
   refreshMasterDataExcelRows(draft);
   ui.masterDataDirty = true;
+  ui.masterDataOpen[section] = true;
   renderMasterData();
 }
 function cancelMasterDataChanges(){
@@ -4248,6 +4415,7 @@ async function saveMasterDataChanges(){
   ui.masterDataDirty = false;
   updateRouteOptionsList();
   updateAircraftOptionsList();
+  updateCrewOptionsList();
   recalcAll();
   render();
   const status = document.getElementById('systemAdminStatus');
@@ -4265,6 +4433,7 @@ function renderMasterData(){
   const source = refreshMasterDataExcelRows(getMasterDataDraft());
   const routeRows = source.routeRows.slice();
   const aircraftRows = source.aircraftRows.slice();
+  const crewRows = source.crewRows.slice();
   const monthlyRows = source.monthlyDutyRows.slice();
   const stayRows = source.stayRows.slice();
   const airportRows = source.airportRows.slice();
@@ -4289,6 +4458,7 @@ function renderMasterData(){
     <div class="masterdata-summary">
       <div class="masterdata-kpi"><div class="masterdata-kpi-label">נתיבים</div><div class="masterdata-kpi-value">${routeRows.length}</div></div>
       <div class="masterdata-kpi"><div class="masterdata-kpi-label">מספרי זנב</div><div class="masterdata-kpi-value">${aircraftRows.length}</div></div>
+      <div class="masterdata-kpi"><div class="masterdata-kpi-label">אנשי צוות</div><div class="masterdata-kpi-value">${crewRows.length}</div></div>
       <div class="masterdata-kpi"><div class="masterdata-kpi-label">חודשי משרה</div><div class="masterdata-kpi-value">${monthlyRows.length}</div></div>
       <div class="masterdata-kpi"><div class="masterdata-kpi-label">כללי שהייה</div><div class="masterdata-kpi-value">${stayRows.length}</div></div>
     </div>
@@ -4303,159 +4473,198 @@ function renderMasterData(){
       <button class="btn soft" type="button" onclick="cancelMasterDataChanges()">בטל שינויים שלא נשמרו</button>
     </div>
 
-    <div class="masterdata-section">
-      <div class="masterdata-section-head">
-        <div>
+    <details class="masterdata-toggle" data-masterdata-section="contractRows" ${isMasterDataSectionOpen('contractRows') ? 'open' : ''}>
+      <summary class="masterdata-toggle-summary">
+        <div class="masterdata-toggle-head">
           <div class="masterdata-section-title">חוזה — מינימום משרה ושכר שעה</div>
           <div class="masterdata-section-sub">השינויים כאן יחולו על כל חישובי השכר רק לאחר לחיצה על שמירה.</div>
         </div>
+      </summary>
+      <div class="masterdata-toggle-body">
+        <div class="masterdata-table-wrap">
+          <table class="masterdata-table">
+            <thead><tr><th>פרמטר</th><th>ערך</th></tr></thead>
+            <tbody>
+              ${contractRows.map(row => `<tr>
+                <td class="route-name">${escapeHtml(row.label)}</td>
+                <td><input class="logbook-cell-input" type="number" min="0" step="0.01" value="${escapeAttr(row.value)}" oninput="updateMasterDataDraftSetting('${row.key}', this.value)"></td>
+              </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>
       </div>
-      <div class="masterdata-table-wrap">
-        <table class="masterdata-table">
-          <thead><tr><th>פרמטר</th><th>ערך</th></tr></thead>
-          <tbody>
-            ${contractRows.map(row => `<tr>
-              <td class="route-name">${escapeHtml(row.label)}</td>
-              <td><input class="logbook-cell-input" type="number" min="0" step="0.01" value="${escapeAttr(row.value)}" oninput="updateMasterDataDraftSetting('${row.key}', this.value)"></td>
-            </tr>`).join('')}
-          </tbody>
-        </table>
-      </div>
-    </div>
+    </details>
 
-    <div class="masterdata-section">
-      <div class="masterdata-section-head">
-        <div>
+    <details class="masterdata-toggle" data-masterdata-section="routeRows" ${isMasterDataSectionOpen('routeRows') ? 'open' : ''}>
+      <summary class="masterdata-toggle-summary">
+        <div class="masterdata-toggle-head">
           <div class="masterdata-section-title">נתיבים, שעות פיקס ומיפוי לוגבוק</div>
           <div class="masterdata-section-sub">כל שינוי כאן יעדכן את רשימת הנתיבים, את הפיקס ואת מיפויי DEP/MID/ARR לאחר שמירה.</div>
         </div>
-        <div class="actions" style="margin:0"><button class="btn soft" type="button" onclick="addMasterDataRow('routeRows')">הוסף נתיב</button></div>
+      </summary>
+      <div class="masterdata-toggle-body">
+        <div class="actions" style="margin:0 0 10px"><button class="btn soft" type="button" onclick="addMasterDataRow('routeRows')">הוסף נתיב</button></div>
+        <div class="masterdata-table-wrap ltr">
+          <table class="masterdata-table ltr">
+            <thead><tr><th>Excel Row</th><th class="route-name">Route</th><th>Fix</th><th>DEP</th><th>MID</th><th>ARR</th><th></th></tr></thead>
+            <tbody>
+              ${routeRows.length ? routeRows.map((row,index) => `<tr>
+                <td>${row.excelRow}</td>
+                <td class="route-name"><input class="logbook-cell-input rem" type="text" value="${escapeAttr(row.route || '')}" oninput="updateMasterDataDraftField('routeRows', ${index}, 'route', this.value)"></td>
+                <td><input class="logbook-cell-input" type="text" value="${escapeAttr(row.fix || '')}" oninput="updateMasterDataDraftField('routeRows', ${index}, 'fix', this.value)"></td>
+                <td><input class="logbook-cell-input" type="text" value="${escapeAttr(row.dep || '')}" oninput="updateMasterDataDraftField('routeRows', ${index}, 'dep', this.value)"></td>
+                <td><input class="logbook-cell-input" type="text" value="${escapeAttr(row.mid || '')}" oninput="updateMasterDataDraftField('routeRows', ${index}, 'mid', this.value)"></td>
+                <td><input class="logbook-cell-input" type="text" value="${escapeAttr(row.arr || '')}" oninput="updateMasterDataDraftField('routeRows', ${index}, 'arr', this.value)"></td>
+                <td><button class="mini-btn" type="button" onclick="removeMasterDataRow('routeRows', ${index})">מחק</button></td>
+              </tr>`).join('') : '<tr><td colspan="7" class="masterdata-empty">לא נמצאו נתיבים.</td></tr>'}
+            </tbody>
+          </table>
+        </div>
       </div>
-      <div class="masterdata-table-wrap ltr">
-        <table class="masterdata-table ltr">
-          <thead><tr><th>Excel Row</th><th class="route-name">Route</th><th>Fix</th><th>DEP</th><th>MID</th><th>ARR</th><th></th></tr></thead>
-          <tbody>
-            ${routeRows.length ? routeRows.map((row,index) => `<tr>
-              <td>${row.excelRow}</td>
-              <td class="route-name"><input class="logbook-cell-input rem" type="text" value="${escapeAttr(row.route || '')}" oninput="updateMasterDataDraftField('routeRows', ${index}, 'route', this.value)"></td>
-              <td><input class="logbook-cell-input" type="text" value="${escapeAttr(row.fix || '')}" oninput="updateMasterDataDraftField('routeRows', ${index}, 'fix', this.value)"></td>
-              <td><input class="logbook-cell-input" type="text" value="${escapeAttr(row.dep || '')}" oninput="updateMasterDataDraftField('routeRows', ${index}, 'dep', this.value)"></td>
-              <td><input class="logbook-cell-input" type="text" value="${escapeAttr(row.mid || '')}" oninput="updateMasterDataDraftField('routeRows', ${index}, 'mid', this.value)"></td>
-              <td><input class="logbook-cell-input" type="text" value="${escapeAttr(row.arr || '')}" oninput="updateMasterDataDraftField('routeRows', ${index}, 'arr', this.value)"></td>
-              <td><button class="mini-btn" type="button" onclick="removeMasterDataRow('routeRows', ${index})">מחק</button></td>
-            </tr>`).join('') : '<tr><td colspan="7" class="masterdata-empty">לא נמצאו נתיבים.</td></tr>'}
-          </tbody>
-        </table>
-      </div>
-    </div>
+    </details>
 
-    <div class="masterdata-section">
-      <div class="masterdata-section-head">
-        <div>
+    <details class="masterdata-toggle" data-masterdata-section="aircraftRows" ${isMasterDataSectionOpen('aircraftRows') ? 'open' : ''}>
+      <summary class="masterdata-toggle-summary">
+        <div class="masterdata-toggle-head">
           <div class="masterdata-section-title">AIR CRAFT — מספרי זנב</div>
           <div class="masterdata-section-sub">הטבלה נשמרת כחלק מ-Master Data וזמינה להצגה עתידית במערכת.</div>
         </div>
-        <div class="actions" style="margin:0"><button class="btn soft" type="button" onclick="addMasterDataRow('aircraftRows')">הוסף מספר זנב</button></div>
+      </summary>
+      <div class="masterdata-toggle-body">
+        <div class="actions" style="margin:0 0 10px"><button class="btn soft" type="button" onclick="addMasterDataRow('aircraftRows')">הוסף מספר זנב</button></div>
+        <div class="masterdata-table-wrap ltr">
+          <table class="masterdata-table ltr">
+            <thead><tr><th>Excel Row</th><th>Tail Number</th><th></th></tr></thead>
+            <tbody>
+              ${aircraftRows.length ? aircraftRows.map((row,index) => `<tr>
+                <td>${row.excelRow}</td>
+                <td><input class="logbook-cell-input" type="text" value="${escapeAttr(row.tail || '')}" oninput="updateMasterDataDraftField('aircraftRows', ${index}, 'tail', this.value)"></td>
+                <td><button class="mini-btn" type="button" onclick="removeMasterDataRow('aircraftRows', ${index})">מחק</button></td>
+              </tr>`).join('') : '<tr><td colspan="3" class="masterdata-empty">לא נמצאו מספרי זנב.</td></tr>'}
+            </tbody>
+          </table>
+        </div>
       </div>
-      <div class="masterdata-table-wrap ltr">
-        <table class="masterdata-table ltr">
-          <thead><tr><th>Excel Row</th><th>Tail Number</th><th></th></tr></thead>
-          <tbody>
-            ${aircraftRows.length ? aircraftRows.map((row,index) => `<tr>
-              <td>${row.excelRow}</td>
-              <td><input class="logbook-cell-input" type="text" value="${escapeAttr(row.tail || '')}" oninput="updateMasterDataDraftField('aircraftRows', ${index}, 'tail', this.value)"></td>
-              <td><button class="mini-btn" type="button" onclick="removeMasterDataRow('aircraftRows', ${index})">מחק</button></td>
-            </tr>`).join('') : '<tr><td colspan="3" class="masterdata-empty">לא נמצאו מספרי זנב.</td></tr>'}
-          </tbody>
-        </table>
-      </div>
-    </div>
+    </details>
 
-    <div class="masterdata-section">
-      <div class="masterdata-section-head">
-        <div>
+    <details class="masterdata-toggle" data-masterdata-section="crewRows" ${isMasterDataSectionOpen('crewRows') ? 'open' : ''}>
+      <summary class="masterdata-toggle-summary">
+        <div class="masterdata-toggle-head">
+          <div class="masterdata-section-title">אנשי צוות</div>
+          <div class="masterdata-section-sub">הרשימה משמשת לבחירה בטופס יצירת טיסה חדשה, ונכנסת אוטומטית לשדה הצוות בלוגבוק.</div>
+        </div>
+      </summary>
+      <div class="masterdata-toggle-body">
+        <div class="actions" style="margin:0 0 10px"><button class="btn soft" type="button" onclick="addMasterDataRow('crewRows')">הוסף איש צוות</button></div>
+        <div class="masterdata-table-wrap ltr">
+          <table class="masterdata-table ltr">
+            <thead><tr><th>Excel Row</th><th>Crew Name</th><th></th></tr></thead>
+            <tbody>
+              ${crewRows.length ? crewRows.map((row,index) => `<tr>
+                <td>${row.excelRow}</td>
+                <td><input class="logbook-cell-input rem" type="text" value="${escapeAttr(row.name || '')}" oninput="updateMasterDataDraftField('crewRows', ${index}, 'name', this.value)"></td>
+                <td><button class="mini-btn" type="button" onclick="removeMasterDataRow('crewRows', ${index})">מחק</button></td>
+              </tr>`).join('') : '<tr><td colspan="3" class="masterdata-empty">לא נמצאה רשימת אנשי צוות.</td></tr>'}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </details>
+
+    <details class="masterdata-toggle" data-masterdata-section="monthlyDutyRows" ${isMasterDataSectionOpen('monthlyDutyRows') ? 'open' : ''}>
+      <summary class="masterdata-toggle-summary">
+        <div class="masterdata-toggle-head">
           <div class="masterdata-section-title">ימי משרה חודשיים</div>
           <div class="masterdata-section-sub">הטבלה נשמרת בענן כ-Master Data, בלי שינוי בלוגיקת החישוב הקיימת מעבר לקריאת הנתונים.</div>
         </div>
-        <div class="actions" style="margin:0"><button class="btn soft" type="button" onclick="addMasterDataRow('monthlyDutyRows')">הוסף חודש</button></div>
+      </summary>
+      <div class="masterdata-toggle-body">
+        <div class="actions" style="margin:0 0 10px"><button class="btn soft" type="button" onclick="addMasterDataRow('monthlyDutyRows')">הוסף חודש</button></div>
+        <div class="masterdata-table-wrap ltr">
+          <table class="masterdata-table ltr">
+            <thead><tr><th>Excel Row</th><th>Month #</th><th>Monthly Duty Days</th><th></th></tr></thead>
+            <tbody>
+              ${monthlyRows.length ? monthlyRows.map((row,index) => `<tr>
+                <td>${row.excelRow}</td>
+                <td><input class="logbook-cell-input" type="text" value="${escapeAttr(String(row.month ?? ''))}" oninput="updateMasterDataDraftField('monthlyDutyRows', ${index}, 'month', this.value)"></td>
+                <td><input class="logbook-cell-input" type="text" value="${escapeAttr(String(row.days ?? ''))}" oninput="updateMasterDataDraftField('monthlyDutyRows', ${index}, 'days', this.value)"></td>
+                <td><button class="mini-btn" type="button" onclick="removeMasterDataRow('monthlyDutyRows', ${index})">מחק</button></td>
+              </tr>`).join('') : '<tr><td colspan="4" class="masterdata-empty">לא נמצאה טבלת ימי משרה חודשיים.</td></tr>'}
+            </tbody>
+          </table>
+        </div>
       </div>
-      <div class="masterdata-table-wrap ltr">
-        <table class="masterdata-table ltr">
-          <thead><tr><th>Excel Row</th><th>Month #</th><th>Monthly Duty Days</th><th></th></tr></thead>
-          <tbody>
-            ${monthlyRows.length ? monthlyRows.map((row,index) => `<tr>
-              <td>${row.excelRow}</td>
-              <td><input class="logbook-cell-input" type="text" value="${escapeAttr(String(row.month ?? ''))}" oninput="updateMasterDataDraftField('monthlyDutyRows', ${index}, 'month', this.value)"></td>
-              <td><input class="logbook-cell-input" type="text" value="${escapeAttr(String(row.days ?? ''))}" oninput="updateMasterDataDraftField('monthlyDutyRows', ${index}, 'days', this.value)"></td>
-              <td><button class="mini-btn" type="button" onclick="removeMasterDataRow('monthlyDutyRows', ${index})">מחק</button></td>
-            </tr>`).join('') : '<tr><td colspan="4" class="masterdata-empty">לא נמצאה טבלת ימי משרה חודשיים.</td></tr>'}
-          </tbody>
-        </table>
-      </div>
-    </div>
+    </details>
 
-    <div class="masterdata-section">
-      <div class="masterdata-section-head">
-        <div>
+    <details class="masterdata-toggle" data-masterdata-section="stayRows" ${isMasterDataSectionOpen('stayRows') ? 'open' : ''}>
+      <summary class="masterdata-toggle-summary">
+        <div class="masterdata-toggle-head">
           <div class="masterdata-section-title">טבלת שהייה</div>
           <div class="masterdata-section-sub">אפשר לעדכן מדרגות שהייה וערכים, והשמירה תזכור אותם כחלק מהמערכת.</div>
         </div>
-        <div class="actions" style="margin:0"><button class="btn soft" type="button" onclick="addMasterDataRow('stayRows')">הוסף מדרגה</button></div>
+      </summary>
+      <div class="masterdata-toggle-body">
+        <div class="actions" style="margin:0 0 10px"><button class="btn soft" type="button" onclick="addMasterDataRow('stayRows')">הוסף מדרגה</button></div>
+        <div class="masterdata-table-wrap ltr">
+          <table class="masterdata-table ltr">
+            <thead><tr><th>Excel Row</th><th>From</th><th>To</th><th>Pay</th><th></th></tr></thead>
+            <tbody>
+              ${stayRows.length ? stayRows.map((row,index) => `<tr>
+                <td>${row.excelRow}</td>
+                <td><input class="logbook-cell-input" type="text" value="${escapeAttr(row.from || '')}" oninput="updateMasterDataDraftField('stayRows', ${index}, 'from', this.value)"></td>
+                <td><input class="logbook-cell-input" type="text" value="${escapeAttr(row.to || '')}" oninput="updateMasterDataDraftField('stayRows', ${index}, 'to', this.value)"></td>
+                <td><input class="logbook-cell-input" type="text" value="${escapeAttr(row.pay || '')}" oninput="updateMasterDataDraftField('stayRows', ${index}, 'pay', this.value)"></td>
+                <td><button class="mini-btn" type="button" onclick="removeMasterDataRow('stayRows', ${index})">מחק</button></td>
+              </tr>`).join('') : '<tr><td colspan="5" class="masterdata-empty">לא נמצאה טבלת שהייה.</td></tr>'}
+            </tbody>
+          </table>
+        </div>
       </div>
-      <div class="masterdata-table-wrap ltr">
-        <table class="masterdata-table ltr">
-          <thead><tr><th>Excel Row</th><th>From</th><th>To</th><th>Pay</th><th></th></tr></thead>
-          <tbody>
-            ${stayRows.length ? stayRows.map((row,index) => `<tr>
-              <td>${row.excelRow}</td>
-              <td><input class="logbook-cell-input" type="text" value="${escapeAttr(row.from || '')}" oninput="updateMasterDataDraftField('stayRows', ${index}, 'from', this.value)"></td>
-              <td><input class="logbook-cell-input" type="text" value="${escapeAttr(row.to || '')}" oninput="updateMasterDataDraftField('stayRows', ${index}, 'to', this.value)"></td>
-              <td><input class="logbook-cell-input" type="text" value="${escapeAttr(row.pay || '')}" oninput="updateMasterDataDraftField('stayRows', ${index}, 'pay', this.value)"></td>
-              <td><button class="mini-btn" type="button" onclick="removeMasterDataRow('stayRows', ${index})">מחק</button></td>
-            </tr>`).join('') : '<tr><td colspan="5" class="masterdata-empty">לא נמצאה טבלת שהייה.</td></tr>'}
-          </tbody>
-        </table>
-      </div>
-    </div>
+    </details>
 
-    <div class="masterdata-section">
-      <div class="masterdata-section-head">
-        <div>
+    <details class="masterdata-toggle" data-masterdata-section="airportRows" ${isMasterDataSectionOpen('airportRows') ? 'open' : ''}>
+      <summary class="masterdata-toggle-summary">
+        <div class="masterdata-toggle-head">
           <div class="masterdata-section-title">רשימת קודי שדות / תחנות</div>
           <div class="masterdata-section-sub">טבלת עזר לקריאה ולתחזוקה, נשמרת בענן כחלק מ-Master Data.</div>
         </div>
-        <div class="actions" style="margin:0"><button class="btn soft" type="button" onclick="addMasterDataRow('airportRows')">הוסף קוד</button></div>
+      </summary>
+      <div class="masterdata-toggle-body">
+        <div class="actions" style="margin:0 0 10px"><button class="btn soft" type="button" onclick="addMasterDataRow('airportRows')">הוסף קוד</button></div>
+        <div class="masterdata-table-wrap ltr">
+          <table class="masterdata-table ltr">
+            <thead><tr><th>Excel Row</th><th>Airport Code</th><th></th></tr></thead>
+            <tbody>
+              ${airportRows.length ? airportRows.map((row,index) => `<tr>
+                <td>${row.excelRow}</td>
+                <td><input class="logbook-cell-input" type="text" value="${escapeAttr(row.code || '')}" oninput="updateMasterDataDraftField('airportRows', ${index}, 'code', this.value)"></td>
+                <td><button class="mini-btn" type="button" onclick="removeMasterDataRow('airportRows', ${index})">מחק</button></td>
+              </tr>`).join('') : '<tr><td colspan="3" class="masterdata-empty">לא נמצאה רשימת קודים.</td></tr>'}
+            </tbody>
+          </table>
+        </div>
       </div>
-      <div class="masterdata-table-wrap ltr">
-        <table class="masterdata-table ltr">
-          <thead><tr><th>Excel Row</th><th>Airport Code</th><th></th></tr></thead>
-          <tbody>
-            ${airportRows.length ? airportRows.map((row,index) => `<tr>
-              <td>${row.excelRow}</td>
-              <td><input class="logbook-cell-input" type="text" value="${escapeAttr(row.code || '')}" oninput="updateMasterDataDraftField('airportRows', ${index}, 'code', this.value)"></td>
-              <td><button class="mini-btn" type="button" onclick="removeMasterDataRow('airportRows', ${index})">מחק</button></td>
-            </tr>`).join('') : '<tr><td colspan="3" class="masterdata-empty">לא נמצאה רשימת קודים.</td></tr>'}
-          </tbody>
-        </table>
-      </div>
-    </div>
+    </details>
 
-    <div class="masterdata-section">
-      <div class="masterdata-section-head">
-        <div>
+    <details class="masterdata-toggle" data-masterdata-section="globalsView" ${isMasterDataSectionOpen('globalsView') ? 'open' : ''}>
+      <summary class="masterdata-toggle-summary">
+        <div class="masterdata-toggle-head">
           <div class="masterdata-section-title">פרמטרים גלובליים הקיימים בקוד</div>
           <div class="masterdata-section-sub">כרגע לתצוגה בלבד. שינוי לוגיקת חוזה/נוסחה לא נכלל בפאץ׳ הזה.</div>
         </div>
+      </summary>
+      <div class="masterdata-toggle-body">
+        <div class="masterdata-table-wrap">
+          <table class="masterdata-table">
+            <thead><tr><th class="route-name">פרמטר</th><th>ערך</th></tr></thead>
+            <tbody>
+              ${contractRows.map(row => `<tr><td class="route-name">${escapeHtml(row.label)}</td><td>${escapeHtml(row.value)}</td></tr>`).join('')}
+            </tbody>
+          </table>
+        </div>
       </div>
-      <div class="masterdata-table-wrap">
-        <table class="masterdata-table">
-          <thead><tr><th class="route-name">פרמטר</th><th>ערך</th></tr></thead>
-          <tbody>
-            ${contractRows.map(row => `<tr><td class="route-name">${escapeHtml(row.label)}</td><td>${escapeHtml(row.value)}</td></tr>`).join('')}
-          </tbody>
-        </table>
-      </div>
-    </div>`;
+    </details>`;
+  bindMasterDataToggleState(mount);
 }
 function openMasterDataScreen(){
   ui.masterDataDraft = getActiveMasterData();
@@ -4478,53 +4687,66 @@ function renderLogbook(){
   const summary = buildLogbookSummary(rows);
   const yearlyTotals = buildLogbookYearlyTotals(rows);
   const flightGroups = buildLogbookFlightGroups(rows);
-  const summaryItems = [
+  const topSummaryItems = [
     { label: 'TOTAL HOURS', value: summary.totalHours, note: 'בסיס קבוע + שעות הלוגבוק' },
     { label: 'ARKIA HOURS', value: summary.arkiaHours, note: 'סה״כ בלוק מתוך הלוגבוק' },
     { label: 'PIC', value: summary.picHours, note: 'סה״כ שעות קברניט מהלוגבוק' },
-    { label: 'T/O 90D', value: String(summary.takeoffs90), note: 'ספירה ידנית ב-90 ימים אחרונים' },
-    { label: 'LAND 90D', value: String(summary.landings90), note: 'ספירה ידנית ב-90 ימים אחרונים' },
-    { label: 'LAST 28D', value: summary.last28, note: 'מגבלת 28 ימים', alert: summary.last28Minutes > (90 * 60) },
-    { label: 'LAST 1Y', value: summary.last365, note: 'מגבלת 365 ימים', alert: summary.last365Minutes > (950 * 60) },
     { label: 'THIS M', value: summary.thisMonth, note: 'חודש נוכחי בלבד' }
+  ];
+  const ftlSummaryItems = [
+    { label: '100ש 28 יום', value: summary.last28, note: '', alert: summary.last28Minutes > (90 * 60) },
+    { label: '1000ש 365 יום', value: summary.last365, note: '', alert: summary.last365Minutes > (950 * 60) },
+    { label: 'נחיתות ב90 יום', value: String(summary.landings90), note: '' },
+    { label: 'המראות ב90 יום', value: String(summary.takeoffs90), note: '' }
   ];
   mount.innerHTML = `
     <div class="logbook-summary">
-      ${summaryItems.map(item => `
-        <div class="logbook-kpi ${summaryKpiClass(item)}">
+      ${topSummaryItems.map(item => `
+        <div class="logbook-kpi logbook-kpi-top ${summaryKpiClass(item)}">
           <div class="logbook-kpi-label">${escapeHtml(item.label)}</div>
           <div class="logbook-kpi-value">${escapeHtml(item.value)}</div>
           <div class="logbook-kpi-note">${escapeHtml(item.note)}</div>
         </div>
       `).join('')}
+      <div class="logbook-ftl-wrap">
+        <div class="logbook-ftl-title">FTL</div>
+        <div class="logbook-ftl-grid">
+          ${ftlSummaryItems.map(item => `
+            <div class="logbook-kpi ${summaryKpiClass(item)}">
+              <div class="logbook-kpi-label">${escapeHtml(item.label)}</div>
+              <div class="logbook-kpi-value">${escapeHtml(item.value)}</div>
+              <div class="logbook-kpi-note">${escapeHtml(item.note)}</div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
     </div>
     
 
     <section class="logbook-section">
-      <div class="logbook-section-head">
-        <div class="logbook-section-title">סיכום חודשי לפי שנה</div>
-        
-      </div>
-      <div class="logbook-yearly">
-        ${yearlyTotals.map(year => `
-          <details class="logbook-year" ${year.isCurrent ? 'open' : ''}>
-            <summary class="logbook-year-summary">
-              <span>${escapeHtml(String(year.year))}</span>
-              <span class="logbook-year-meta">
-                <span class="logbook-year-total">YEAR TOTAL ${escapeHtml(year.total)}</span>
-              </span>
-            </summary>
-            <div class="logbook-month-grid">
-              ${year.months.map(month => `
-                <div class="logbook-month-card ${month.empty ? 'logbook-month-zero' : ''}">
-                  <div class="logbook-month-label">${escapeHtml(month.label)}</div>
-                  <div class="logbook-month-value">${escapeHtml(month.value)}</div>
-                </div>
-              `).join('')}
-            </div>
-          </details>
-        `).join('')}
-      </div>
+      <details class="logbook-summary-toggle">
+        <summary class="logbook-summary-toggle-head">סיכום חודשי</summary>
+        <div class="logbook-yearly">
+          ${yearlyTotals.map(year => `
+            <details class="logbook-year" ${year.isCurrent ? 'open' : ''}>
+              <summary class="logbook-year-summary">
+                <span>${escapeHtml(String(year.year))}</span>
+                <span class="logbook-year-meta">
+                  <span class="logbook-year-total">YEAR TOTAL ${escapeHtml(year.total)}</span>
+                </span>
+              </summary>
+              <div class="logbook-month-grid">
+                ${year.months.map(month => `
+                  <div class="logbook-month-card ${month.empty ? 'logbook-month-zero' : ''}">
+                    <div class="logbook-month-label">${escapeHtml(month.label)}</div>
+                    <div class="logbook-month-value">${escapeHtml(month.value)}</div>
+                  </div>
+                `).join('')}
+              </div>
+            </details>
+          `).join('')}
+        </div>
+      </details>
     </section>
 
     <section class="logbook-section">
@@ -4626,6 +4848,7 @@ function renderLogbook(){
 function render(){
   updateRouteOptionsList();
   updateAircraftOptionsList();
+  updateCrewOptionsList();
   updateHeaderPilotMeta();
   const mount = document.getElementById('mount');
   const monthWrap = document.getElementById('newMonthFormWrap');
@@ -5253,7 +5476,7 @@ function applyImportedMarch2026Data(){
 
 applyImportedMarch2026Data();
 function deepClone(value){ return JSON.parse(JSON.stringify(value)); }
-function getSystemBackupVersion(){ return 'v106'; }
+function getSystemBackupVersion(){ return 'v139'; }
 function setSystemAdminStatus(message, isError){
   const el = document.getElementById('systemAdminStatus');
   if (!el) return;
