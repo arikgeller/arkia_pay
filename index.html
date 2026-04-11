@@ -1753,7 +1753,7 @@ color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto
       <div id="masterDataMount"></div>
     </div>
   </div>
-  <div class="app-version-footer">גרסה 181.153</div>
+  <div class="app-version-footer">גרסה 181.158</div>
 </div>
 
 <datalist id="routeOptionsList">
@@ -2036,11 +2036,13 @@ function readPersistedMasterDataSnapshot(appId){
     if (parsed.masterData && typeof parsed.masterData === 'object') {
       return {
         savedAt: String(parsed.savedAt || '').trim(),
+        pendingCloudSync: !!parsed.pendingCloudSync,
         masterData: ensureMasterDataShape(parsed.masterData)
       };
     }
     return {
       savedAt: '',
+      pendingCloudSync: false,
       masterData: ensureMasterDataShape(parsed)
     };
   } catch (err) {
@@ -2062,11 +2064,12 @@ function persistMasterDataSettingsLocally(appId){
     console.warn('Failed persisting local master data settings', err);
   }
 }
-function persistMasterDataSnapshotLocally(appId, savedAt){
+function persistMasterDataSnapshotLocally(appId, savedAt, pendingCloudSync){
   try {
     const snapshot = ensureMasterDataShape(model.masterData);
     localStorage.setItem(getMasterDataSnapshotStorageKey(appId), JSON.stringify({
       savedAt: String(savedAt || new Date().toISOString()).trim(),
+      pendingCloudSync: !!pendingCloudSync,
       masterData: snapshot
     }));
   } catch (err) {
@@ -4949,10 +4952,13 @@ function cancelMasterDataChanges(){
   renderMasterData();
 }
 async function saveMasterDataChanges(){
+  const ok = confirm('האם לשמור את עדכוני ה-Master Data? השינויים יתעדכנו במערכת ובענן.');
+  if (!ok) return;
   const draft = refreshMasterDataExcelRows(getMasterDataDraft());
   model.masterData = ensureMasterDataShape(draft);
+  const savedAt = new Date().toISOString();
   persistMasterDataSettingsLocally();
-  persistMasterDataSnapshotLocally();
+  persistMasterDataSnapshotLocally(CLOUD_APP_ID, savedAt, true);
   ui.masterDataDraft = getActiveMasterData();
   ui.masterDataDirty = false;
   updateRouteOptionsList();
@@ -4962,11 +4968,8 @@ async function saveMasterDataChanges(){
   render();
   const status = document.getElementById('systemAdminStatus');
   if (status) status.textContent = 'שומר Master Data לענן...';
-  if (cloud.booted) {
-    await saveToCloud();
-  } else {
-    scheduleCloudSave();
-  }
+  if (!cloud.booted) await bootCloud();
+  await saveToCloud();
   if (status) status.textContent = `Master Data נשמר: מינימום משרה ${formatIls(getEffectiveMinimumEmploymentIls())}, שכר שעה ${getEffectiveHourlyRate()}`;
 }
 function renderMasterData(){
@@ -6193,7 +6196,7 @@ function mergeCloudModel(payload, cloudUpdatedAt){
   });
   model.masterData = mergedMasterData;
   applyPersistedMasterDataSettings(CLOUD_APP_ID);
-  persistMasterDataSnapshotLocally(CLOUD_APP_ID, cloudUpdatedAt);
+  persistMasterDataSnapshotLocally(CLOUD_APP_ID, cloudUpdatedAt, false);
   model.months.forEach(month => {
     month.flights ||= [];
     month.flights.forEach(f => ensureFlightShape(f));
@@ -6212,6 +6215,8 @@ async function loadFromCloud(){
     return localSnapshotApplied;
   }
   cloud.loading = true;
+  let result = false;
+  let shouldSyncLocalMasterDataToCloud = false;
   try {
     const { data, error } = await client
       .from('app_state')
@@ -6222,30 +6227,30 @@ async function loadFromCloud(){
       console.warn('Cloud load failed', error);
       if (localSnapshotApplied) {
         render();
-        return true;
+        result = true;
       }
-      return false;
-    }
-    if (data && data.payload) {
+    } else if (data && data.payload) {
       const cloudUpdatedAt = String(data.updated_at || '').trim();
       const localSavedAt = String(localSnapshot?.savedAt || '').trim();
-      const preferLocalMasterData = !!(localSnapshot?.masterData && localSavedAt && cloudUpdatedAt && localSavedAt > cloudUpdatedAt);
+      const preferLocalMasterData = !!(localSnapshot?.pendingCloudSync && localSnapshot?.masterData && localSavedAt && cloudUpdatedAt && localSavedAt > cloudUpdatedAt);
       const mergedPayload = preferLocalMasterData
         ? { ...data.payload, masterData: localSnapshot.masterData }
         : data.payload;
       mergeCloudModel(mergedPayload, preferLocalMasterData ? localSavedAt : cloudUpdatedAt);
+      shouldSyncLocalMasterDataToCloud = preferLocalMasterData;
       cloud.loadedAtLeastOnce = true;
       render();
-      return true;
-    }
-    if (localSnapshotApplied || applyPersistedMasterDataSnapshot(CLOUD_APP_ID)) {
+      result = true;
+    } else if (localSnapshotApplied || applyPersistedMasterDataSnapshot(CLOUD_APP_ID)) {
+      shouldSyncLocalMasterDataToCloud = !!localSnapshot?.pendingCloudSync;
       render();
-      return true;
+      result = true;
     }
-    return false;
   } finally {
     cloud.loading = false;
   }
+  if (shouldSyncLocalMasterDataToCloud) await saveToCloud();
+  return result;
 }
 async function saveToCloud(){
   const client = initCloudClient();
@@ -6256,13 +6261,15 @@ async function saveToCloud(){
   }
   cloud.saving = true;
   try {
+    const savedAt = new Date().toISOString();
     persistMasterDataSettingsLocally(CLOUD_APP_ID);
-    persistMasterDataSnapshotLocally(CLOUD_APP_ID);
+    persistMasterDataSnapshotLocally(CLOUD_APP_ID, savedAt, true);
     const payload = serializeModel();
     const { error } = await client
       .from('app_state')
-      .upsert({ app_id: CLOUD_APP_ID, payload, updated_at: new Date().toISOString() }, { onConflict: 'app_id' });
+      .upsert({ app_id: CLOUD_APP_ID, payload, updated_at: savedAt }, { onConflict: 'app_id' });
     if (error) console.warn('Cloud save failed', error);
+    else persistMasterDataSnapshotLocally(CLOUD_APP_ID, savedAt, false);
   } finally {
     cloud.saving = false;
     if (cloud.queued) {
