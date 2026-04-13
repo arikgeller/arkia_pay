@@ -724,15 +724,6 @@ color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto
   color:#64748b;
 }
 
-@media (min-width:769px){
-  #payrollScreen .details .blocks .chipbox .k{
-    font-size:20px;
-    font-weight:900;
-    letter-spacing:-0.01em;
-    color:#0d3558;
-  }
-}
-
 #payrollScreen .display-value{
   font-size:15px;
   font-weight:900;
@@ -1770,7 +1761,7 @@ color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto
       <div id="masterDataMount"></div>
     </div>
   </div>
-  <div class="app-version-footer">גרסה 181.172</div>
+  <div class="app-version-footer">גרסה 181.174</div>
 </div>
 
 <datalist id="routeOptionsList">
@@ -4064,7 +4055,7 @@ function renderEditablePart(monthName, flightId, key, part){
           <span>חג/שבת</span>
         </label>` : '';
   const displayLabel = isActivityRoute ? getFlightActivityRouteLabel(flight) : part.label;
-  const topLabel = `<div class="k ${isShabbat ? 'shabbat-k-row' : ''}">${isShabbat ? `<span>${displayLabel}</span>${shabbatToggle}` : displayLabel}</div>`;
+  const topLabel = isStayRoute ? '' : `<div class="k ${isShabbat ? 'shabbat-k-row' : ''}">${isShabbat ? `<span>${displayLabel}</span>${shabbatToggle}` : displayLabel}</div>`;
   return `
     <div class="chipbox ${isManual(part)?'manual':''}">
       ${isManual(part) ? '<div class="manual-mark">manual</div>' : ''}
@@ -4339,13 +4330,16 @@ function updateLogbookManual(key, field, value){
       recalcMonthFromFlightChange(payrollLink.month);
       if (!manualEntry.pic || manualEntry.pic === previousBlock) manualEntry.pic = payrollLink.flight.block || normalizedBlock || '00:00';
       manualEntry.block = payrollLink.flight.block || normalizedBlock || '00:00';
+      if (typeof scheduleCloudSave === 'function') scheduleCloudSave();
       return;
     }
     manualEntry.block = normalizedBlock || '00:00';
     if (!manualEntry.pic) manualEntry.pic = manualEntry.block;
+    if (typeof scheduleCloudSave === 'function') scheduleCloudSave();
     return;
   }
   manualEntry[field] = value;
+  if (typeof scheduleCloudSave === 'function') scheduleCloudSave();
 }
 function containsDhNote(value){
   return /\bDH\b/i.test(String(value || '').trim());
@@ -4403,6 +4397,7 @@ function deleteLogbookRow(key){
   if (!confirm('למחוק את הטיסה מהלוגבוק?')) return;
   if (!ui.logbookDeleted) ui.logbookDeleted = {};
   ui.logbookDeleted[key] = true;
+  if (typeof scheduleCloudSave === 'function') scheduleCloudSave();
   renderLogbook();
 }
 
@@ -5461,6 +5456,7 @@ function renderLogbook(){
       if (field === 'pic' || field === 'block') value = value.replace(/[^0-9:]/g, '').slice(0,5);
       target.value = value;
       updateLogbookManual(key, field, value);
+      if (shouldRender && typeof saveToCloud === 'function' && cloud.booted) saveToCloud();
       if (field === 'block' && shouldRender) {
         render();
         return;
@@ -6288,6 +6284,8 @@ function serializeModel(){
   payload.masterData = ensureMasterDataShape(payload.masterData || model.masterData);
   payload.masterData.minimumEmploymentIls = getEffectiveMinimumEmploymentIls();
   payload.masterData.defaultHourlyRate = getEffectiveHourlyRate();
+  payload.logbookManual = deepClone(ui.logbookManual || {});
+  payload.logbookDeleted = deepClone(ui.logbookDeleted || {});
   return payload;
 }
 function mergeCloudModel(payload, cloudUpdatedAt){
@@ -6298,6 +6296,8 @@ function mergeCloudModel(payload, cloudUpdatedAt){
     defaultHourlyRate: payload.defaultHourlyRate
   });
   model.masterData = mergedMasterData;
+  ui.logbookManual = deepClone(payload.logbookManual || {});
+  ui.logbookDeleted = deepClone(payload.logbookDeleted || {});
   applyPersistedMasterDataSettings(CLOUD_APP_ID);
   persistMasterDataSnapshotLocally(CLOUD_APP_ID, cloudUpdatedAt, false);
   model.months.forEach(month => {
