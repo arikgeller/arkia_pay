@@ -71,6 +71,9 @@ color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto
 .summary-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
 .summary-box{background:#fff;border:1px solid var(--line);border-radius:14px;padding:10px}
 .summary-box .k{font-size:11px;color:var(--muted);margin-bottom:4px}.summary-box .v{font-size:18px;font-weight:800}
+.summary-box .note{font-size:10px;color:var(--muted);margin-top:6px;line-height:1.3}
+.summary-progress{margin-top:8px;height:6px;border-radius:999px;background:#d9efe0;overflow:hidden}
+.summary-progress-fill{height:100%;border-radius:999px;background:linear-gradient(90deg,#159947 0%,#27c267 100%)}
 .summary-box.alert{background:#fef2f2;border-color:#fecaca}.summary-box.alert .k,.summary-box.alert .v{color:#b91c1c}
 .summary-box.offset-soft{background:#fef2f2;border-color:#fecaca}
 .summary-box.offset-soft .k,.summary-box.offset-soft .v{color:#000}
@@ -102,6 +105,7 @@ color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto
 .chipbox.total{grid-column:1/-1;background:#eef2ff}.toolbar{display:flex;gap:8px;flex-wrap:wrap}
 .tech-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .flight-tech-title{font-size:13px !important;font-weight:800 !important;color:var(--text) !important;margin-bottom:8px}
+@media (min-width:769px){#payrollScreen .flight-tech-title{font-size:20px !important;font-weight:900 !important;letter-spacing:-0.01em;color:#0d3558 !important}}
 
 .tech-identity-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,.5fr) minmax(0,.5fr);gap:8px;direction:ltr;grid-column:1/-1;align-items:end}
 .tech-identity-row .field{min-width:0}
@@ -214,8 +218,12 @@ color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto
 .logbook-kpi-label{font-size:11px;font-weight:800;color:#166534;margin-bottom:4px}
 .logbook-kpi-value{font-size:20px;font-weight:900;letter-spacing:.02em;line-height:1.1;min-height:22px;display:flex;align-items:center;justify-content:center;color:#166534}
 .logbook-kpi-note{font-size:10px;color:#15803d;margin-top:6px;line-height:1.25;min-height:24px;display:flex;align-items:flex-start;justify-content:center}
+.logbook-kpi-progress{margin-top:8px;height:6px;border-radius:999px;background:#d9efe0;overflow:hidden}
+.logbook-kpi-progress-fill{height:100%;border-radius:999px;background:linear-gradient(90deg,#159947 0%,#27c267 100%)}
 .logbook-kpi.alert{background:#fef2f2;border-color:#fecaca}
 .logbook-kpi.alert .logbook-kpi-label,.logbook-kpi.alert .logbook-kpi-note,.logbook-kpi.alert .logbook-kpi-value{color:#b91c1c}
+.logbook-kpi.alert .logbook-kpi-progress{background:#fee2e2}
+.logbook-kpi.alert .logbook-kpi-progress-fill{background:linear-gradient(90deg,#ef4444 0%,#dc2626 100%)}
 .logbook-kpi.ok .logbook-kpi-value,.logbook-kpi.neutral .logbook-kpi-value{color:#166534}
 .logbook-summary-caption{margin:-2px 0 12px;font-size:12px;color:var(--muted);direction:rtl;text-align:right}
 .logbook-yearly{margin:0 0 14px;direction:ltr}
@@ -714,6 +722,15 @@ color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto
 #payrollScreen .chipbox .k{
   font-weight:800;
   color:#64748b;
+}
+
+@media (min-width:769px){
+  #payrollScreen .details .blocks .chipbox .k{
+    font-size:20px;
+    font-weight:900;
+    letter-spacing:-0.01em;
+    color:#0d3558;
+  }
 }
 
 #payrollScreen .display-value{
@@ -1645,7 +1662,7 @@ color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto
 
       <div class="form-card">
         <div class="actions" style="margin-top:0">
-          <button class="btn primary" type="button" onclick="toggleNewFlightForm()" id="newFlightToggleBtn">צור טיסה חדשה</button>
+          <button class="btn primary" type="button" onclick="toggleNewFlightForm()" id="newFlightToggleBtn">צור פעילות חדשה</button>
         </div>
         <div id="newFlightFormWrap" class="collapsed action-popover" style="margin-top:12px">
           <div class="form-grid">
@@ -1654,7 +1671,7 @@ color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto
               <input id="flightDate" class="input date-input-ltr" type="date" lang="en-GB" dir="ltr">
             </div>
             <div class="field new-flight-route-field" style="grid-column:1/-1">
-              <div class="label">נתיב</div>
+              <div class="label">נתיב / פעילות</div>
               <input id="flightRoute" class="input desktop-datalist" list="routeOptionsList" autocomplete="off" placeholder="בחר נתיב מתוך הרשימה והתחל להקליד לסינון">
               <select id="flightRouteMobile" class="input mobile-picker" onchange="syncNewFlightRouteFromMobile(this.value)">
                 <option value="">בחר נתיב</option>
@@ -1711,7 +1728,7 @@ color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto
             </div>
           </div>
           <div class="actions">
-            <button class="btn primary" type="button" onclick="createFlight()">צור טיסה חדשה</button>
+            <button class="btn primary" type="button" onclick="createFlight()">צור פעילות חדשה</button>
           </div>
           <div id="flightCreateMsg" class="success"></div>
         </div>
@@ -1753,7 +1770,7 @@ color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto
       <div id="masterDataMount"></div>
     </div>
   </div>
-  <div class="app-version-footer">גרסה 181.159</div>
+  <div class="app-version-footer">גרסה 181.172</div>
 </div>
 
 <datalist id="routeOptionsList">
@@ -2097,7 +2114,7 @@ function applyPersistedMasterDataSnapshot(appId){
 function makeEmptyParts(){
   return {
     fix: { label: 'פיקס', calc: '00:00', manual: '', type: 'duration' },
-    stay: { label: 'תשלום שהייה', calc: '00:00', manual: '', type: 'duration' },
+    stay: { label: 'פעילות', calc: '00:00', manual: '', type: 'duration' },
     shabbat: { label: 'שבת', calc: '00:00', manual: '', type: 'duration' },
     hoursB: { label: 'מאיץ שעות', calc: '00:00', manual: '', type: 'duration' },
     daysB: { label: 'מאיץ ימים', calc: '00:00', manual: '', type: 'duration' },
@@ -3073,6 +3090,21 @@ function calculateBlockMinutes(f){ return legMinutes(f.dep1,f.arr1)+legMinutes(f
 function routeIsActivity(route){ const r=normalizeRouteKey(route); return !!r && !['stay','sby','sic','vec','canc','mil','sim'].includes(r); }
 function routeIsStandby(route){ return normalizeRouteKey(route)==='sby'; }
 function routeIsStay(route){ return normalizeRouteKey(route)==='stay'; }
+function routeUsesFlightFix(route){
+  const r = normalizeRouteKey(route);
+  return !!r && !['arp','canc','sby','יום הדרכה','mil','sic','vec','stay','sim'].includes(r);
+}
+function routeUsesActivityPay(route){
+  const r = normalizeRouteKey(route);
+  return !!r && !routeUsesFlightFix(r);
+}
+function getConfiguredRouteDuration(route){
+  const key = normalizeRouteKey(route);
+  const fixMap = getEffectiveRouteFixMap();
+  if (!Object.prototype.hasOwnProperty.call(fixMap,key)) return '00:00';
+  const configuredFix = String(fixMap[key] || '').trim();
+  return configuredFix || '00:00';
+}
 function excelWeekday(dateLabel){
   const [d,m] = String(dateLabel||'').split('.').map(Number);
   if (!d || !m) return null;
@@ -3085,12 +3117,9 @@ function getEffectiveBlockMinutes(f){
 }
 function calculateFixCalc(f){
   const key = normalizeRouteKey(f.route);
-  const fixMap = getEffectiveRouteFixMap();
-  if (Object.prototype.hasOwnProperty.call(fixMap,key)) {
-    const configuredFix = String(fixMap[key] || '').trim();
-    if (configuredFix) return configuredFix;
-  }
-  if (routeIsStay(key) || routeIsStandby(key)) return '00:00';
+  if (!routeUsesFlightFix(key)) return '00:00';
+  const configuredFix = getConfiguredRouteDuration(key);
+  if (configuredFix !== '00:00') return configuredFix;
   const block = getEffectiveBlockMinutes(f);
   return block ? toHHMM(block) : '00:00';
 }
@@ -3312,6 +3341,13 @@ function calculateStayPayFromDuration(minutes){
   }
   return best || '00:00';
 }
+function calculateActivityCalc(f, prev, next){
+  const routeKey = normalizeRouteKey(f?.route);
+  if (!routeKey) return '00:00';
+  if (routeIsStay(routeKey)) return calculateStayPayFromDuration(calculateStayDurationMinutes(f, prev, next));
+  if (routeUsesActivityPay(routeKey)) return getConfiguredRouteDuration(routeKey);
+  return '00:00';
+}
 function effectiveFixMinutes(f){
   return toMinutes(finalValue(f.parts?.fix || { calc: calculateFixCalc(f), manual: '' }));
 }
@@ -3364,7 +3400,11 @@ function calculateShabbatCalc(f, monthName){
 }
 
 function isHoursAccelEligible(f){
-  return !!String(f?.date || '').trim() && effectiveFixMinutes(f) > 0;
+  const routeKey = normalizeRouteKey(f?.route);
+  if (!String(f?.date || '').trim()) return false;
+  if (effectiveFixMinutes(f) <= 0) return false;
+  if (!routeKey) return false;
+  return !['canc','sby','mil','sic','vec','stay','sim','יום הדרכה'].includes(routeKey);
 }
 function calculateHoursBCalc(f, runningEligibleFixBefore){
   if (!isHoursAccelEligible(f)) return '00:00';
@@ -3381,6 +3421,32 @@ function expectedHoursBMinutes(month){
   const totalFixMins = totalByPart(month,'fix');
   const threshold = toMinutes(EXCEL_HOURS_ACCEL_THRESHOLD);
   return Math.max(0, Math.round(Math.max(0, totalFixMins - threshold) / 2));
+}
+function getHoursAccelEligibleFixMinutes(month){
+  return (month?.flights || []).reduce((acc, flight) => {
+    ensureFlightShape(flight);
+    return acc + (isHoursAccelEligible(flight) ? effectiveFixMinutes(flight) : 0);
+  }, 0);
+}
+function getHoursAccelEligibleFixProgressPercent(month){
+  const threshold = Math.max(1, toMinutes(EXCEL_HOURS_ACCEL_THRESHOLD));
+  const eligibleFixMinutes = getHoursAccelEligibleFixMinutes(month);
+  return Math.max(0, Math.min(100, (eligibleFixMinutes / threshold) * 100));
+}
+function getMonthAccelModeFromMonth(month){
+  const monthName = String(month?.monthName || '').trim();
+  const monthIndex = HEBREW_MONTH_NAMES.findIndex(name => monthName.includes(name));
+  const monthPart = monthIndex >= 0 ? String(monthIndex + 1) : '';
+  return Number(EXCEL_MONTH_ACCEL_MODE[monthPart] || 0);
+}
+function getDaysAccelThresholdForMonth(month){
+  const accelMode = getMonthAccelModeFromMonth(month);
+  return accelMode === 16 ? 16 : 17;
+}
+function getDaysAccelProgressPercent(month){
+  const threshold = Math.max(1, getDaysAccelThresholdForMonth(month));
+  const activityDays = Number(month?.activityDays || 0);
+  return Math.max(0, Math.min(100, (activityDays / threshold) * 100));
 }
 function hasHoursBIntegrityMismatch(month){
   const displayedBaseHours = toMinutes(month.baseHours || '00:00');
@@ -3420,6 +3486,9 @@ function getFlightStayDurationDisplay(month, flightId){
     return toHHMM(calculateStayDurationMinutes(current, prevFlight, nextFlight));
   }
   return '00:00';
+}
+function getFlightActivityRouteLabel(flight){
+  return String(flight?.route || '').trim() || '-';
 }
 function applyCalculatedValue(part, value){ if (part && !isManual(part)) part.calc = value; }
 function forceDerivedCalculatedValue(part, value){ if (!part) return; part.manual = ''; part.calc = value; }
@@ -3467,12 +3536,11 @@ function updateFlightDerived(f){
 }
 function recalcSingleFlightAuto(f,ctx){
   updateFlightDerived(f);
-  const stayDurationMinutes = calculateStayDurationMinutes(f, ctx.prevFlight, ctx.nextFlight);
-  const stayPay = calculateStayPayFromDuration(stayDurationMinutes);
+  const activityPay = calculateActivityCalc(f, ctx.prevFlight, ctx.nextFlight);
   applyCalculatedValue(f.parts.fix, calculateFixCalc(f));
-  applyCalculatedValue(f.parts.stay, stayPay);
+  applyCalculatedValue(f.parts.stay, activityPay);
   applyCalculatedValue(f.parts.shabbat, calculateShabbatCalc(f, ctx.monthName));
-  applyCalculatedValue(f.parts.daysB, calculateDaysBCalc(f, ctx.cumulativeDays, toMinutes(stayPay), ctx.standbyL));
+  applyCalculatedValue(f.parts.daysB, calculateDaysBCalc(f, ctx.cumulativeDays, toMinutes(activityPay), ctx.standbyL));
   applyCalculatedValue(f.parts.changePay, calculateChangePayCalc(f));
   applyCalculatedValue(f.parts.extras, '00:00');
 }
@@ -3962,6 +4030,7 @@ function renderEditablePart(monthName, flightId, key, part){
   const isShabbat = key === 'shabbat';
   const isStay = key === 'stay';
   const isStayRoute = isStay && normalizeRouteKey(flight?.route) === 'stay';
+  const isActivityRoute = isStay && flight && routeUsesActivityPay(flight.route) && !isStayRoute;
   const stayDualLayout = isStayRoute ? `
             <div class="stay-two-col">
               <div class="stay-col stay-col-hours">
@@ -3975,13 +4044,27 @@ function renderEditablePart(monthName, flightId, key, part){
                   <button class="mini-btn save" type="button" onclick="saveEdit('${monthName}','${flightId}','${key}')">שמור</button>
                 </div>
               </div>
-            </div>` : '';
+            </div>` : (isActivityRoute ? `
+            <div class="stay-two-col">
+              <div class="stay-col stay-col-hours">
+                <div class="stay-col-label">סוג פעילות</div>
+                <div class="stay-col-value">${escapeHtml(getFlightActivityRouteLabel(flight))}</div>
+              </div>
+              <div class="stay-col stay-col-pay">
+                <div class="stay-col-label">זמן פעילות</div>
+                <div class="edit-row">
+                  <input data-edit="${draftKey(flightId,key)}" class="edit-input ${invalid?'invalid':''}" value="${escapeHtml(currentValue)}" oninput="updateDraft('${flightId}','${key}',this.value)">
+                  <button class="mini-btn save" type="button" onclick="saveEdit('${monthName}','${flightId}','${key}')">שמור</button>
+                </div>
+              </div>
+            </div>` : '');
   const shabbatToggle = isShabbat ? `
         <label class="shabbat-toggle-inline" onclick="event.stopPropagation()">
           <input type="checkbox" ${!isManual(part) && flight?.manualShabbat ? 'checked' : ''} onchange="toggleManualShabbat('${monthName}','${flightId}',this.checked)">
           <span>חג/שבת</span>
         </label>` : '';
-  const topLabel = isStayRoute ? '' : `<div class="k ${isShabbat ? 'shabbat-k-row' : ''}">${isShabbat ? `<span>${part.label}</span>${shabbatToggle}` : part.label}</div>`;
+  const displayLabel = isActivityRoute ? getFlightActivityRouteLabel(flight) : part.label;
+  const topLabel = `<div class="k ${isShabbat ? 'shabbat-k-row' : ''}">${isShabbat ? `<span>${displayLabel}</span>${shabbatToggle}` : displayLabel}</div>`;
   return `
     <div class="chipbox ${isManual(part)?'manual':''}">
       ${isManual(part) ? '<div class="manual-mark">manual</div>' : ''}
@@ -4002,10 +4085,10 @@ function renderEditablePart(monthName, flightId, key, part){
 function renderTechEditor(monthName,f){
   return `
     <div class="chipbox full">
-      <div class="k flight-tech-title">פרטי טיסה</div>
+      <div class="k flight-tech-title">פרטי פעילות</div>
       <div class="tech-grid">
         <div class="field"><div class="label">תאריך</div><input id="tech-date-${f.id}" class="input date-input-ltr" type="date" lang="en-GB" dir="ltr" value="${escapeHtml(dateToInputValue(f.date||'', monthName))}"></div>
-        <div class="field"><div class="label">נתיב</div><input id="tech-route-${f.id}" class="input" list="routeOptionsList" autocomplete="off" value="${escapeHtml(f.route||'')}"></div>
+        <div class="field"><div class="label">נתיב / פעילות</div><input id="tech-route-${f.id}" class="input" list="routeOptionsList" autocomplete="off" value="${escapeHtml(f.route||'')}"></div>
         <div class="tech-identity-row">
           <div class="field aircraft-field"><div class="label">A/C</div><input id="tech-aircraft-${f.id}" class="input" list="aircraftOptionsList" autocomplete="off" value="${escapeHtml(f.aircraft||'')}"></div>
           ${usesMonthlySequenceOrdering(monthName) ? `<div class="field sequence-field"><div class="label">מס׳ רץ חודשי</div><input id="tech-sequence-${f.id}" class="input tech-sequence-input" inputmode="numeric" value="${escapeHtml(String(getFlightSequenceNumber(f, 0)))}"></div>` : '<div class="field sequence-field"></div>'}
@@ -4071,7 +4154,7 @@ function renderMonth(month){
           </div>
           <div class="summary-grid">
             <div class="summary-box"><div class="k">סה״כ שעות בלוק</div><div class="v">${totalBlock(month)}</div></div>
-            <div class="summary-box"><div class="k">שעות לתשלום</div><div class="v">${getMonthBasePayableHours(month)}</div></div>
+            <div class="summary-box"><div class="k">סהכ שעות למשרה</div><div class="v">${getMonthBasePayableHours(month)}</div></div>
             <div class="summary-box"><div class="k">כמות טיסות</div><div class="v">${month.flightsCount}</div></div>
             <div class="summary-box"><div class="k">ימי פעילות</div><div class="v">${month.activityDays}</div></div>
             <div class="summary-box"><div class="k">ימי סטנדביי</div><div class="v">${month.standbyDays}</div></div>
@@ -4084,9 +4167,9 @@ function renderMonth(month){
           <div class="group-title">תוספות ומאיצים</div>
           <div class="summary-grid">
             <div class="summary-box fix-hours-box"><div class="k">סהכ שעות פיקס</div><div class="v">${month.baseHours || '00:00'}</div></div>
-            <div class="summary-box stay-pay-box"><div class="k">תשלום שהייה</div><div class="v">${toHHMM(totalByPart(month,'stay'))}</div></div>
-            <div class="summary-box green-soft accel-days-box"><div class="k">מאיץ ימים</div><div class="v">${toHHMM(totalByPart(month,'daysB'))}</div></div>
-            <div class="summary-box green-soft accel-hours-box"><div class="k">מאיץ שעות</div><div class="v">${toHHMM(totalByPart(month,'hoursB'))}</div></div>
+            <div class="summary-box stay-pay-box"><div class="k">פעילות</div><div class="v">${toHHMM(totalByPart(month,'stay'))}</div></div>
+            <div class="summary-box green-soft accel-days-box"><div class="k">מאיץ ימים</div><div class="v">${toHHMM(totalByPart(month,'daysB'))}</div><div class="note">ימי פעילות למאיץ: ${month.activityDays}</div><div class="summary-progress" aria-hidden="true"><div class="summary-progress-fill" style="width:${getDaysAccelProgressPercent(month)}%"></div></div></div>
+            <div class="summary-box green-soft accel-hours-box"><div class="k">מאיץ שעות</div><div class="v">${toHHMM(totalByPart(month,'hoursB'))}</div><div class="note">שעות פיקס למאיץ: ${toHHMM(getHoursAccelEligibleFixMinutes(month))}</div><div class="summary-progress" aria-hidden="true"><div class="summary-progress-fill" style="width:${getHoursAccelEligibleFixProgressPercent(month)}%"></div></div></div>
             <div class="summary-box shabbat-box"><div class="k">שבת</div><div class="v">${toHHMM(totalByPart(month,'shabbat'))}</div></div>
             <div class="summary-box offset-soft offset-box"><div class="k">קיזוז מאיץ</div><div class="v">${toHHMM(totalByPart(month,'offset'))}</div></div>
             <div class="summary-box green-soft extras-box"><div class="k">נוספות</div><div class="v">${toHHMM(totalByPart(month,'extras'))}</div></div>
@@ -4642,6 +4725,9 @@ function summaryKpiClass(item){
 function renderLogbookYearFlightTable(year){
   let lastMonthKey = '';
   let monthBandIndex = -1;
+  const crewValues = getEffectiveCrewRows()
+    .map(row => String(row.name || '').trim())
+    .filter(Boolean);
   return `
     <div class="logbook-table-wrap">
       <table class="logbook-table">
@@ -4684,7 +4770,13 @@ function renderLogbookYearFlightTable(year){
               <td class="input-cell"><input class="logbook-cell-input" type="text" inputmode="numeric" value="${escapeAttr(row.block)}" data-logbook-key="${escapeAttr(row.key)}" data-logbook-field="block" placeholder="00:00"></td>
               <td class="input-cell"><input class="logbook-cell-input small plain" type="text" inputmode="numeric" value="${escapeAttr(row.takeoffs)}" data-logbook-key="${escapeAttr(row.key)}" data-logbook-field="takeoffs" placeholder="0"></td>
               <td class="input-cell"><input class="logbook-cell-input small plain" type="text" inputmode="numeric" value="${escapeAttr(row.landings)}" data-logbook-key="${escapeAttr(row.key)}" data-logbook-field="landings" placeholder="0"></td>
-              <td class="input-cell"><input class="logbook-cell-input rem" type="text" value="${escapeAttr(row.rem)}" data-logbook-key="${escapeAttr(row.key)}" data-logbook-field="rem" placeholder=""></td>
+              <td class="input-cell">
+                <select class="logbook-cell-input rem" data-logbook-key="${escapeAttr(row.key)}" data-logbook-field="rem">
+                  <option value=""></option>
+                  ${row.rem && !crewValues.includes(String(row.rem).trim()) ? `<option value="${escapeAttr(row.rem)}">${escapeHtml(row.rem)}</option>` : ''}
+                  ${crewValues.map(name => `<option value="${escapeAttr(name)}" ${String(row.rem || '').trim() === name ? 'selected' : ''}>${escapeHtml(name)}</option>`).join('')}
+                </select>
+              </td>
               <td class="input-cell"><input class="logbook-cell-input pic" type="text" inputmode="decimal" value="${escapeAttr(row.pic)}" data-logbook-key="${escapeAttr(row.key)}" data-logbook-field="pic" placeholder="00:00"></td>
               <td class="logbook-delete-cell"><button class="logbook-delete-btn" type="button" data-logbook-delete-key="${escapeAttr(row.key)}">מחק</button></td>
             </tr>`;
@@ -5246,9 +5338,11 @@ function renderLogbook(){
     { label: 'PIC', value: summary.picHours, note: 'סה״כ שעות קברניט מהלוגבוק' },
     { label: 'THIS M', value: summary.thisMonth, note: 'חודש נוכחי בלבד' }
   ];
+  const last28Progress = Math.max(0, Math.min(100, (summary.last28Minutes / (100 * 60)) * 100));
+  const last365Progress = Math.max(0, Math.min(100, (summary.last365Minutes / (1000 * 60)) * 100));
   const ftlSummaryItems = [
-    { label: '100ש 28 יום', value: summary.last28, note: '', alert: summary.last28Minutes > (90 * 60) },
-    { label: '1000ש 365 יום', value: summary.last365, note: '', alert: summary.last365Minutes > (950 * 60) },
+    { label: '100ש 28 יום', value: summary.last28, note: '', alert: summary.last28Minutes > (90 * 60), progress: last28Progress },
+    { label: '1000ש 365 יום', value: summary.last365, note: '', alert: summary.last365Minutes > (950 * 60), progress: last365Progress },
     { label: 'נחיתות ב90 יום', value: String(summary.landings90), note: '' },
     { label: 'המראות ב90 יום', value: String(summary.takeoffs90), note: '' }
   ];
@@ -5269,6 +5363,7 @@ function renderLogbook(){
               <div class="logbook-kpi-label">${escapeHtml(item.label)}</div>
               <div class="logbook-kpi-value">${escapeHtml(item.value)}</div>
               <div class="logbook-kpi-note">${escapeHtml(item.note)}</div>
+              ${Number.isFinite(item.progress) ? `<div class="logbook-kpi-progress" aria-hidden="true"><div class="logbook-kpi-progress-fill" style="width:${item.progress}%"></div></div>` : ''}
             </div>
           `).join('')}
         </div>
@@ -5411,7 +5506,7 @@ function render(){
   if (monthWrap) monthWrap.className = ui.newMonthFormOpen ? 'action-popover' : 'collapsed action-popover';
   if (monthBtn) monthBtn.textContent = ui.newMonthFormOpen ? 'סגירת חלון חודש חדש' : 'צור חודש חדש';
   if (wrap) wrap.className = ui.newFlightFormOpen ? 'action-popover' : 'collapsed action-popover';
-  if (btn) btn.textContent = ui.newFlightFormOpen ? 'סגירת חלון טיסה חדשה' : 'צור טיסה חדשה';
+  if (btn) btn.textContent = ui.newFlightFormOpen ? 'סגירת חלון פעילות חדשה' : 'צור פעילות חדשה';
   const monthsForDisplay = [...model.months].sort((a,b) => monthSortKey(b.monthName) - monthSortKey(a.monthName));
   mount.innerHTML = monthsForDisplay.map(renderMonth).join('');
   renderLogbook();
