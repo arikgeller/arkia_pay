@@ -1778,7 +1778,7 @@ color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto
       <div id="masterDataMount"></div>
     </div>
   </div>
-  <div class="app-version-footer">גרסה 181.186</div>
+  <div class="app-version-footer">גרסה 181.188</div>
 </div>
 
 <datalist id="routeOptionsList">
@@ -3381,10 +3381,16 @@ function buildFlightActivityGroups(month){
   return groups.map(group => {
     const firstItem = group.items[0] || null;
     const lastItem = group.items[group.items.length - 1] || null;
+    const firstIndex = Number(firstItem?.index ?? -1);
+    const lastIndex = Number(lastItem?.index ?? -1);
+    const hasExplicitStay = firstIndex >= 0 && lastIndex >= firstIndex
+      ? logicalFlights.slice(firstIndex, lastIndex + 1).some(flight => routeIsStay(flight?.route))
+      : false;
     return {
       items: group.items,
       firstItem,
       lastItem,
+      hasExplicitStay,
       activityStartDateTime: firstItem?.bounds.startDateTime || null,
       activityEndDateTime: lastItem?.bounds.endDateTime || null,
       totalBlockMinutes: group.items.reduce((sum, item) => sum + getEffectiveBlockMinutes(item.flight), 0)
@@ -3416,6 +3422,7 @@ function getActivityGroupStayDurationMinutes(group){
 }
 function isComputedStayPaymentCarrier(month, flightId){
   const group = findFlightActivityGroupForFlight(month, flightId);
+  if (group?.hasExplicitStay) return false;
   if (!group?.lastItem?.flight) return false;
   return String(group.lastItem.flight.id) === String(flightId);
 }
@@ -3426,6 +3433,7 @@ function calculateStayDurationMinutes(month, f, prev, next){
   }
   if (routeUsesFlightFix(f.route)) {
     const activityGroup = findFlightActivityGroupForFlight(month, f.id);
+    if (activityGroup?.hasExplicitStay) return 0;
     return getActivityGroupStayDurationMinutes(activityGroup);
   }
   const intra = calculateStayGapWithinFlight(f);
