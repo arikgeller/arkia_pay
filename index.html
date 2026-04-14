@@ -1778,7 +1778,7 @@ color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto
       <div id="masterDataMount"></div>
     </div>
   </div>
-  <div class="app-version-footer">גרסה 181.183</div>
+  <div class="app-version-footer">גרסה 181.186</div>
 </div>
 
 <datalist id="routeOptionsList">
@@ -3381,15 +3381,10 @@ function buildFlightActivityGroups(month){
   return groups.map(group => {
     const firstItem = group.items[0] || null;
     const lastItem = group.items[group.items.length - 1] || null;
-    const hasExplicitStay = !!(firstItem && lastItem && logicalFlights.some((flight, index) => {
-      if (index <= firstItem.index || index >= lastItem.index) return false;
-      return routeIsStay(flight.route);
-    }));
     return {
       items: group.items,
       firstItem,
       lastItem,
-      hasExplicitStay,
       activityStartDateTime: firstItem?.bounds.startDateTime || null,
       activityEndDateTime: lastItem?.bounds.endDateTime || null,
       totalBlockMinutes: group.items.reduce((sum, item) => sum + getEffectiveBlockMinutes(item.flight), 0)
@@ -3421,7 +3416,7 @@ function getActivityGroupStayDurationMinutes(group){
 }
 function isComputedStayPaymentCarrier(month, flightId){
   const group = findFlightActivityGroupForFlight(month, flightId);
-  if (!group?.lastItem?.flight || group.hasExplicitStay) return false;
+  if (!group?.lastItem?.flight) return false;
   return String(group.lastItem.flight.id) === String(flightId);
 }
 function calculateStayDurationMinutes(month, f, prev, next){
@@ -3431,7 +3426,6 @@ function calculateStayDurationMinutes(month, f, prev, next){
   }
   if (routeUsesFlightFix(f.route)) {
     const activityGroup = findFlightActivityGroupForFlight(month, f.id);
-    if (activityGroup?.hasExplicitStay) return 0;
     return getActivityGroupStayDurationMinutes(activityGroup);
   }
   const intra = calculateStayGapWithinFlight(f);
@@ -4208,14 +4202,14 @@ function renderEditablePart(monthName, flightId, key, part){
           <input type="checkbox" ${!isManual(part) && flight?.manualShabbat ? 'checked' : ''} onchange="toggleManualShabbat('${monthName}','${flightId}',this.checked)">
           <span>חג/שבת</span>
         </label>` : '';
-  const displayLabel = isActivityRoute ? getFlightActivityRouteLabel(flight) : part.label;
+  const displayLabel = isComputedStayRoute ? 'שהייה' : (isActivityRoute ? getFlightActivityRouteLabel(flight) : part.label);
   const topLabel = isStayRoute ? '' : `<div class="k ${isShabbat ? 'shabbat-k-row' : ''}">${isShabbat ? `<span>${displayLabel}</span>${shabbatToggle}` : displayLabel}</div>`;
   return `
     <div class="chipbox ${isManual(part)?'manual':''}">
       ${isManual(part) ? '<div class="manual-mark">manual</div>' : ''}
       ${topLabel}
       <div class="value-area">
-        ${isStayRoute ? stayDualLayout : `
+        ${(isStayRoute || isComputedStayRoute) ? stayDualLayout : `
           <div class="edit-row">
             <input data-edit="${draftKey(flightId,key)}" class="edit-input ${invalid?'invalid':''}" value="${escapeHtml(currentValue)}" oninput="updateDraft('${flightId}','${key}',this.value)">
             <button class="mini-btn save" type="button" onclick="saveEdit('${monthName}','${flightId}','${key}')">שמור</button>
