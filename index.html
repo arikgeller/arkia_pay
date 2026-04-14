@@ -642,6 +642,12 @@ color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto
   text-align:center;
 }
 
+#payrollScreen .summary-box .activity-breakdown-line{
+  font-size:11px;
+  margin-top:4px;
+  line-height:1.2;
+}
+
 #payrollScreen .summary-box.offset-soft{
   background:linear-gradient(180deg,#fef2f2 0%, #fde2e2 100%);
   border-color:#fecaca;
@@ -1772,7 +1778,7 @@ color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto
       <div id="masterDataMount"></div>
     </div>
   </div>
-  <div class="app-version-footer">גרסה 181.177</div>
+  <div class="app-version-footer">גרסה 181.183</div>
 </div>
 
 <datalist id="routeOptionsList">
@@ -3375,10 +3381,15 @@ function buildFlightActivityGroups(month){
   return groups.map(group => {
     const firstItem = group.items[0] || null;
     const lastItem = group.items[group.items.length - 1] || null;
+    const hasExplicitStay = !!(firstItem && lastItem && logicalFlights.some((flight, index) => {
+      if (index <= firstItem.index || index >= lastItem.index) return false;
+      return routeIsStay(flight.route);
+    }));
     return {
       items: group.items,
       firstItem,
       lastItem,
+      hasExplicitStay,
       activityStartDateTime: firstItem?.bounds.startDateTime || null,
       activityEndDateTime: lastItem?.bounds.endDateTime || null,
       totalBlockMinutes: group.items.reduce((sum, item) => sum + getEffectiveBlockMinutes(item.flight), 0)
@@ -3395,13 +3406,33 @@ function findStayActivityGroupForFlight(month, stayFlightId){
   });
   return matchedGroup;
 }
+function findFlightActivityGroupForFlight(month, flightId){
+  let matchedGroup = null;
+  buildFlightActivityGroups(month).forEach(group => {
+    if (group.items.some(item => String(item.flight.id) === String(flightId))) matchedGroup = group;
+  });
+  return matchedGroup;
+}
+function getActivityGroupStayDurationMinutes(group){
+  if (!group?.firstItem || !group?.lastItem) return 0;
+  if (!group.firstItem.flight.startsAtBase || !group.lastItem.flight.returnsToBase) return 0;
+  const totalActivityMinutes = minutesBetweenDateTimes(group.activityStartDateTime, group.activityEndDateTime);
+  return Math.max(0, totalActivityMinutes - group.totalBlockMinutes);
+}
+function isComputedStayPaymentCarrier(month, flightId){
+  const group = findFlightActivityGroupForFlight(month, flightId);
+  if (!group?.lastItem?.flight || group.hasExplicitStay) return false;
+  return String(group.lastItem.flight.id) === String(flightId);
+}
 function calculateStayDurationMinutes(month, f, prev, next){
   if (routeIsStay(f.route)) {
     const activityGroup = findStayActivityGroupForFlight(month, f.id);
-    if (!activityGroup?.firstItem || !activityGroup?.lastItem) return 0;
-    if (!activityGroup.firstItem.flight.startsAtBase || !activityGroup.lastItem.flight.returnsToBase) return 0;
-    const totalActivityMinutes = minutesBetweenDateTimes(activityGroup.activityStartDateTime, activityGroup.activityEndDateTime);
-    return Math.max(0, totalActivityMinutes - activityGroup.totalBlockMinutes);
+    return getActivityGroupStayDurationMinutes(activityGroup);
+  }
+  if (routeUsesFlightFix(f.route)) {
+    const activityGroup = findFlightActivityGroupForFlight(month, f.id);
+    if (activityGroup?.hasExplicitStay) return 0;
+    return getActivityGroupStayDurationMinutes(activityGroup);
   }
   const intra = calculateStayGapWithinFlight(f);
   if (intra >= toMinutes(EXCEL_MIN_STAY_FOR_HELPER)) return intra;
@@ -3420,6 +3451,12 @@ function calculateActivityCalc(month, f, prev, next){
   if (!routeKey) return '00:00';
   if (routeIsStay(routeKey)) return calculateStayPayFromDuration(calculateStayDurationMinutes(month, f, prev, next));
   if (routeUsesActivityPay(routeKey)) return getConfiguredRouteDuration(routeKey);
+  if (routeUsesFlightFix(routeKey)) {
+    const stayMinutes = calculateStayDurationMinutes(month, f, prev, next);
+    if (stayMinutes >= toMinutes(EXCEL_MIN_STAY_FOR_HELPER) && isComputedStayPaymentCarrier(month, f.id)) {
+      return calculateStayPayFromDuration(stayMinutes);
+    }
+  }
   return '00:00';
 }
 function effectiveFixMinutes(f){
@@ -3563,6 +3600,26 @@ function getFlightStayDurationDisplay(month, flightId){
 }
 function getFlightActivityRouteLabel(flight){
   return String(flight?.route || '').trim() || '-';
+}
+function getMonthActivityBreakdown(month){
+  const totals = new Map();
+  (month?.flights || []).forEach(flight => {
+    ensureFlightShape(flight);
+    const minutes = toMinutes(finalValue(flight.parts?.stay || { calc:'00:00', manual:'' }));
+    if (!minutes) return;
+    let label = 'שהייה';
+    if (!routeIsStay(flight.route) && routeUsesActivityPay(flight.route)) label = getFlightActivityRouteLabel(flight);
+    const current = Number(totals.get(label) || 0);
+    totals.set(label, current + minutes);
+  });
+  return Array.from(totals.entries())
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'he'))
+    .map(([label, minutes]) => ({ label, value: toHHMM(minutes) }));
+}
+function renderMonthActivityBreakdown(month){
+  const items = getMonthActivityBreakdown(month);
+  if (!items.length) return '';
+  return items.map(item => `<div class="note activity-breakdown-line">${escapeHtml(item.label)}: ${escapeHtml(item.value)}</div>`).join('');
 }
 function applyCalculatedValue(part, value){ if (part && !isManual(part)) part.calc = value; }
 function forceDerivedCalculatedValue(part, value){ if (!part) return; part.manual = ''; part.calc = value; }
@@ -4105,6 +4162,7 @@ function renderEditablePart(monthName, flightId, key, part){
   const isStay = key === 'stay';
   const isStayRoute = isStay && normalizeRouteKey(flight?.route) === 'stay';
   const isActivityRoute = isStay && flight && routeUsesActivityPay(flight.route) && !isStayRoute;
+  const isComputedStayRoute = isStay && flight && routeUsesFlightFix(flight.route) && !isStayRoute && !isActivityRoute && isComputedStayPaymentCarrier(month, flight.id) && toMinutes(getFlightStayDurationDisplay(month, flightId)) >= toMinutes(EXCEL_MIN_STAY_FOR_HELPER);
   const stayDualLayout = isStayRoute ? `
             <div class="stay-two-col">
               <div class="stay-col stay-col-hours">
@@ -4131,7 +4189,20 @@ function renderEditablePart(monthName, flightId, key, part){
                   <button class="mini-btn save" type="button" onclick="saveEdit('${monthName}','${flightId}','${key}')">שמור</button>
                 </div>
               </div>
-            </div>` : '');
+            </div>` : (isComputedStayRoute ? `
+            <div class="stay-two-col">
+              <div class="stay-col stay-col-hours">
+                <div class="stay-col-label">שעות שהייה</div>
+                <div class="stay-col-value">${escapeHtml(getFlightStayDurationDisplay(month, flightId))}</div>
+              </div>
+              <div class="stay-col stay-col-pay">
+                <div class="stay-col-label">תשלום שהייה</div>
+                <div class="edit-row">
+                  <input data-edit="${draftKey(flightId,key)}" class="edit-input ${invalid?'invalid':''}" value="${escapeHtml(currentValue)}" oninput="updateDraft('${flightId}','${key}',this.value)">
+                  <button class="mini-btn save" type="button" onclick="saveEdit('${monthName}','${flightId}','${key}')">שמור</button>
+                </div>
+              </div>
+            </div>` : ''));
   const shabbatToggle = isShabbat ? `
         <label class="shabbat-toggle-inline" onclick="event.stopPropagation()">
           <input type="checkbox" ${!isManual(part) && flight?.manualShabbat ? 'checked' : ''} onchange="toggleManualShabbat('${monthName}','${flightId}',this.checked)">
@@ -4241,7 +4312,7 @@ function renderMonth(month){
           <div class="group-title">תוספות ומאיצים</div>
           <div class="summary-grid">
             <div class="summary-box fix-hours-box"><div class="k">סהכ שעות פיקס</div><div class="v">${month.baseHours || '00:00'}</div></div>
-            <div class="summary-box stay-pay-box"><div class="k">פעילות</div><div class="v">${toHHMM(totalByPart(month,'stay'))}</div></div>
+            <div class="summary-box stay-pay-box"><div class="k">פעילות</div><div class="v">${toHHMM(totalByPart(month,'stay'))}</div>${renderMonthActivityBreakdown(month)}</div>
             <div class="summary-box green-soft accel-days-box"><div class="k">מאיץ ימים</div><div class="v">${toHHMM(totalByPart(month,'daysB'))}</div><div class="note">ימי פעילות למאיץ: ${month.activityDays}</div><div class="summary-progress" aria-hidden="true"><div class="summary-progress-fill" style="width:${getDaysAccelProgressPercent(month)}%"></div></div></div>
             <div class="summary-box green-soft accel-hours-box"><div class="k">מאיץ שעות</div><div class="v">${toHHMM(totalByPart(month,'hoursB'))}</div><div class="note">שעות פיקס למאיץ: ${toHHMM(getHoursAccelEligibleFixMinutes(month))}</div><div class="summary-progress" aria-hidden="true"><div class="summary-progress-fill" style="width:${getHoursAccelEligibleFixProgressPercent(month)}%"></div></div></div>
             <div class="summary-box shabbat-box"><div class="k">שבת</div><div class="v">${toHHMM(totalByPart(month,'shabbat'))}</div></div>
