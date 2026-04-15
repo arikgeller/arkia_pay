@@ -1778,7 +1778,7 @@ color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto
       <div id="masterDataMount"></div>
     </div>
   </div>
-  <div class="app-version-footer">גרסה 181.189</div>
+  <div class="app-version-footer">גרסה 181.190</div>
 </div>
 
 <datalist id="routeOptionsList">
@@ -4283,6 +4283,7 @@ function renderFlightBlocks(monthName, f){
 }
 
 function renderMonth(month){
+  const displayFlights = getSortedFlightsForMonth(month).slice().reverse();
   return `
     <div class="month-summary">
       <div class="month-row">
@@ -4334,7 +4335,7 @@ function renderMonth(month){
         </div>
         <div class="card" style="padding-top:10px;margin-bottom:0">
           <div class="list-header"><div>תאריך</div><div>נתיב</div><div>זמנים</div><div>אשל</div><div>פעילות</div><div>בלוק</div><div>לתשלום</div><div></div></div>
-          ${getSortedFlightsForMonth(month).map(f => {
+          ${displayFlights.map(f => {
             const hasManual = Object.values(f.parts).some(isManual);
             return `
               <div class="flight">
