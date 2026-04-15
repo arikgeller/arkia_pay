@@ -1778,7 +1778,7 @@ color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto
       <div id="masterDataMount"></div>
     </div>
   </div>
-  <div class="app-version-footer">גרסה 181.188</div>
+  <div class="app-version-footer">גרסה 181.189</div>
 </div>
 
 <datalist id="routeOptionsList">
@@ -4502,6 +4502,7 @@ function containsDhNote(value){
 }
 const LOGBOOK_IMPORTED_CUTOFF_DATE = '2026-03-22';
 const LOGBOOK_PAYROLL_START_DATE = '2026-03-23';
+const LOGBOOK_TIME_SORT_START_DATE = '2026-04-01';
 function isImportedLogbookRowInKeptRange(baseRow){
   const date = String(baseRow?.date || '').trim();
   return !!date && date <= LOGBOOK_IMPORTED_CUTOFF_DATE;
@@ -4509,6 +4510,31 @@ function isImportedLogbookRowInKeptRange(baseRow){
 function isPayrollLogbookRowInActiveRange(isoDate){
   const date = String(isoDate || '').trim();
   return !!date && date >= LOGBOOK_PAYROLL_START_DATE;
+}
+function shouldUseTimedLogbookOrdering(row){
+  const date = String(row?.date || '').trim();
+  return !!date && date >= LOGBOOK_TIME_SORT_START_DATE;
+}
+function getLogbookRowSortTime(row){
+  const value = String(row?.departureTime || '').trim();
+  return isValidTime(value) ? value : '';
+}
+function compareLogbookRows(a, b, direction){
+  const sortDirection = direction === 'desc' ? -1 : 1;
+  if (a.date !== b.date) return a.date.localeCompare(b.date) * sortDirection;
+  const timedA = shouldUseTimedLogbookOrdering(a);
+  const timedB = shouldUseTimedLogbookOrdering(b);
+  if (timedA || timedB) {
+    const timeA = getLogbookRowSortTime(a);
+    const timeB = getLogbookRowSortTime(b);
+    if (timeA && timeB && timeA !== timeB) return timeA.localeCompare(timeB) * sortDirection;
+    if (timeA && !timeB) return -1 * sortDirection;
+    if (!timeA && timeB) return 1 * sortDirection;
+    const seqA = Number(a.sequenceNumber || 0);
+    const seqB = Number(b.sequenceNumber || 0);
+    if (seqA !== seqB) return (seqA - seqB) * sortDirection;
+  }
+  return (Number(a.serial || 0) - Number(b.serial || 0)) * sortDirection;
 }
 function buildPayrollLogbookBaseRows(){
   const rows = [];
@@ -4538,7 +4564,8 @@ function buildPayrollLogbookBaseRows(){
         rem: String(flight.crewContact || '').trim(),
         pic: flight.block || '00:00',
         monthName: month.monthName,
-        sequenceNumber: getFlightSequenceNumber(flight, 0)
+        sequenceNumber: getFlightSequenceNumber(flight, 0),
+        departureTime: getFlightDepartureTimeForLogic(flight)
       });
     });
   });
@@ -4591,6 +4618,7 @@ function buildLogbookRows(){
       isPayrollRow: !!baseRow.isPayrollRow,
       monthName: baseRow.monthName || '',
       sequenceNumber: Number(baseRow.sequenceNumber || 0),
+      departureTime: String(baseRow.departureTime || '').trim(),
       block: (manual.block || baseRow.block || '00:00'),
       takeoffs: String(manual.takeoffs || '').trim() !== '' ? manual.takeoffs : String(baseRow.takeoffs || ''),
       landings: String(manual.landings || '').trim() !== '' ? manual.landings : String(baseRow.landings || ''),
@@ -4599,16 +4627,7 @@ function buildLogbookRows(){
     };
   });
 
-  rows.sort((a,b) => {
-    if (a.date !== b.date) return a.date.localeCompare(b.date);
-    const orderedA = a.isPayrollRow && usesMonthlySequenceOrdering(a.monthName || '');
-    const orderedB = b.isPayrollRow && usesMonthlySequenceOrdering(b.monthName || '');
-    if (orderedA || orderedB) {
-      if (orderedA && orderedB && a.monthName === b.monthName) return Number(a.sequenceNumber || 0) - Number(b.sequenceNumber || 0);
-      return orderedA ? 1 : -1;
-    }
-    return Number(a.serial || 0) - Number(b.serial || 0);
-  });
+  rows.sort((a,b) => compareLogbookRows(a, b, 'asc'));
   return rows;
 }
 
@@ -4673,10 +4692,7 @@ function exportLogbookPdf(){
     alert('טווח התאריכים לא תקין: תאריך התחלה מאוחר מתאריך הסיום.');
     return;
   }
-  const filtered = filterLogbookRowsByRange(rows, fromDate, toDate).sort((a,b) => {
-    if (a.date !== b.date) return a.date.localeCompare(b.date);
-    return Number(a.serial || 0) - Number(b.serial || 0);
-  });
+  const filtered = filterLogbookRowsByRange(rows, fromDate, toDate).sort((a,b) => compareLogbookRows(a, b, 'asc'));
   if (!filtered.length) {
     alert('לא נמצאו טיסות בטווח התאריכים שנבחר.');
     return;
@@ -4857,10 +4873,7 @@ function buildLogbookFlightGroups(rows){
   return Array.from(groups.entries())
     .sort((a,b) => b[0]-a[0])
     .map(([year, yearRows]) => {
-      yearRows.sort((a,b) => {
-        if (a.date !== b.date) return b.date.localeCompare(a.date);
-        return Number(b.serial || 0) - Number(a.serial || 0);
-      });
+      yearRows.sort((a,b) => compareLogbookRows(a, b, 'desc'));
       return {
         year,
         isCurrent: year === currentYear,
