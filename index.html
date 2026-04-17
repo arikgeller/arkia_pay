@@ -407,6 +407,107 @@ color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto
   .desktop-datalist{display:none}
 }
 
+@media (min-width:721px) and (max-width:1180px) and (pointer:coarse){
+  #payrollScreen #newFlightFormWrap .mobile-picker{
+    display:block;
+  }
+  #payrollScreen #newFlightFormWrap .desktop-datalist{
+    display:none;
+  }
+  #payrollScreen #newFlightFormWrap .form-grid{
+    grid-template-columns:repeat(2, minmax(0, 1fr));
+    gap:10px 12px;
+  }
+  #payrollScreen #newFlightFormWrap .new-flight-dep1-field,
+  #payrollScreen #newFlightFormWrap .new-flight-arr1-field,
+  #payrollScreen #newFlightFormWrap .new-flight-dep2-field,
+  #payrollScreen #newFlightFormWrap .new-flight-arr2-field{
+    width:100%;
+    min-width:0;
+    max-width:none;
+    display:grid;
+    grid-template-rows:18px 42px;
+    align-content:start;
+    gap:6px;
+  }
+  #payrollScreen #newFlightFormWrap .new-flight-dep1-field .label,
+  #payrollScreen #newFlightFormWrap .new-flight-arr1-field .label,
+  #payrollScreen #newFlightFormWrap .new-flight-dep2-field .label,
+  #payrollScreen #newFlightFormWrap .new-flight-arr2-field .label{
+    min-height:18px;
+    margin:0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    white-space:nowrap;
+  }
+  #payrollScreen #newFlightFormWrap #flightDep1,
+  #payrollScreen #newFlightFormWrap #flightArr1,
+  #payrollScreen #newFlightFormWrap #flightDep2,
+  #payrollScreen #newFlightFormWrap #flightArr2{
+    -webkit-appearance:none;
+    appearance:none;
+    display:block;
+    width:100%;
+    min-width:0;
+    max-width:none;
+    height:42px;
+    min-height:42px;
+    padding:8px 8px;
+    box-sizing:border-box;
+    font-size:13px;
+    font-weight:700;
+    line-height:24px;
+    direction:ltr;
+    text-align:center;
+    letter-spacing:0;
+    overflow:hidden;
+    border:1px solid #ccdae8;
+    border-radius:12px;
+    background:linear-gradient(180deg,#ffffff 0%, #f9fcff 100%);
+  }
+  #payrollScreen #newFlightFormWrap #flightDep1::-webkit-datetime-edit,
+  #payrollScreen #newFlightFormWrap #flightArr1::-webkit-datetime-edit,
+  #payrollScreen #newFlightFormWrap #flightDep2::-webkit-datetime-edit,
+  #payrollScreen #newFlightFormWrap #flightArr2::-webkit-datetime-edit{
+    padding:0;
+    line-height:24px;
+    font-size:13px;
+  }
+  #payrollScreen #newFlightFormWrap #flightDep1::-webkit-datetime-edit-fields-wrapper,
+  #payrollScreen #newFlightFormWrap #flightArr1::-webkit-datetime-edit-fields-wrapper,
+  #payrollScreen #newFlightFormWrap #flightDep2::-webkit-datetime-edit-fields-wrapper,
+  #payrollScreen #newFlightFormWrap #flightArr2::-webkit-datetime-edit-fields-wrapper{
+    padding:0;
+  }
+  #payrollScreen #newFlightFormWrap #flightDep1::-webkit-datetime-edit-hour-field,
+  #payrollScreen #newFlightFormWrap #flightArr1::-webkit-datetime-edit-hour-field,
+  #payrollScreen #newFlightFormWrap #flightDep2::-webkit-datetime-edit-hour-field,
+  #payrollScreen #newFlightFormWrap #flightArr2::-webkit-datetime-edit-hour-field,
+  #payrollScreen #newFlightFormWrap #flightDep1::-webkit-datetime-edit-minute-field,
+  #payrollScreen #newFlightFormWrap #flightArr1::-webkit-datetime-edit-minute-field,
+  #payrollScreen #newFlightFormWrap #flightDep2::-webkit-datetime-edit-minute-field,
+  #payrollScreen #newFlightFormWrap #flightArr2::-webkit-datetime-edit-minute-field{
+    padding:0;
+  }
+  #payrollScreen #newFlightFormWrap #flightDep1::-webkit-date-and-time-value,
+  #payrollScreen #newFlightFormWrap #flightArr1::-webkit-date-and-time-value,
+  #payrollScreen #newFlightFormWrap #flightDep2::-webkit-date-and-time-value,
+  #payrollScreen #newFlightFormWrap #flightArr2::-webkit-date-and-time-value{
+    text-align:center;
+  }
+  #payrollScreen #newFlightFormWrap #flightDep1::-webkit-calendar-picker-indicator,
+  #payrollScreen #newFlightFormWrap #flightArr1::-webkit-calendar-picker-indicator,
+  #payrollScreen #newFlightFormWrap #flightDep2::-webkit-calendar-picker-indicator,
+  #payrollScreen #newFlightFormWrap #flightArr2::-webkit-calendar-picker-indicator{
+    margin:0;
+    opacity:.9;
+    width:16px;
+    min-width:16px;
+  }
+}
+
 
 /* v143 payroll-only visual upgrade, built to keep rollback to v141 simple */
 #payrollScreen .workspace-grid{
@@ -741,18 +842,8 @@ color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto
 }
 
 #payrollScreen .chipbox .k{
-  font-size:13px;
   font-weight:800;
   color:#64748b;
-}
-
-@media (min-width:769px){
-  #payrollScreen .chipbox .k{
-    font-size:20px;
-    font-weight:900;
-    letter-spacing:-0.01em;
-    color:#0d3558;
-  }
 }
 
 #payrollScreen .display-value{
@@ -1776,7 +1867,7 @@ color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto
       <div id="masterDataMount"></div>
     </div>
   </div>
-  <div class="app-version-footer">גרסה 181.197</div>
+  <div class="app-version-footer">גרסה 181.202</div>
 </div>
 
 <datalist id="routeOptionsList">
