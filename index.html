@@ -114,6 +114,12 @@ color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto
 .tech-identity-row .field.aircraft-field{direction:rtl}
 .tech-identity-row .field.dh-field{direction:rtl}
 .tech-identity-row .field.sequence-field{direction:rtl}
+.tech-grid > .field > .label,
+.tech-identity-row .field > .label{
+  font-size:16px;
+  font-weight:800;
+  line-height:1.15;
+}
 .tech-identity-row .field.aircraft-field .input,.tech-identity-row .field.sequence-field .input{min-height:46px;padding:10px 12px;font-size:13px;font-weight:700}
 .tech-identity-row .field.sequence-field .label,.tech-identity-row .field.dh-field .label{text-align:center}
 .tech-sequence-input{padding:10px 8px;font-size:11px;font-weight:800;text-align:center}
@@ -152,7 +158,7 @@ color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto
   .month-row-header{padding:0 4px 6px;font-size:9px}.month-row{padding:8px 6px;min-height:44px}
   .month-title{font-size:12px}.month-sub{display:none}.month-pill{font-size:10px;padding:6px 4px}.month-pill-label{font-size:8px;margin-bottom:3px}.month-pill-value{font-size:10px}.toggle{width:24px;height:24px;border-radius:8px}
   .summary-grid{grid-template-columns:1fr 1fr;gap:6px}
-  .summary-box{padding:8px}.summary-box .k{font-size:10px}.summary-box .v{font-size:15px}
+  .summary-box{padding:8px}.summary-box .k{font-size:11px;line-height:1.2}.summary-box .v{font-size:15px}
   #payrollScreen .fix-hours-box{order:1}
   #payrollScreen .stay-pay-box{order:2}
   #payrollScreen .shabbat-box{order:3}
@@ -165,7 +171,7 @@ color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto
   .list-header{padding:0 4px 6px;font-size:9px}.flight-row{padding:8px 6px;min-height:44px}
   .date{font-size:11px}.route{font-size:12px}.sub{font-size:9px}.times,.block,.pay{font-size:11px}
   .block,.pay{padding:6px 4px}.details{padding:8px}.blocks{grid-template-columns:1fr 1fr;gap:6px}
-  .chipbox{padding:8px}.chipbox .k{font-size:9px}
+  .chipbox{padding:8px}.chipbox .k{font-size:10px;line-height:1.2}
   #payrollScreen .value-area{min-width:0}
   #payrollScreen .edit-row{gap:3px}
   #payrollScreen .edit-input{flex:0 1 58px;max-width:58px;width:58px;padding:3px 4px;font-size:11px}
@@ -467,30 +473,6 @@ color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto
     border-radius:12px;
     background:linear-gradient(180deg,#ffffff 0%, #f9fcff 100%);
   }
-  #payrollScreen #newFlightFormWrap #flightDep1::-webkit-datetime-edit,
-  #payrollScreen #newFlightFormWrap #flightArr1::-webkit-datetime-edit,
-  #payrollScreen #newFlightFormWrap #flightDep2::-webkit-datetime-edit,
-  #payrollScreen #newFlightFormWrap #flightArr2::-webkit-datetime-edit{
-    padding:0;
-    line-height:24px;
-    font-size:13px;
-  }
-  #payrollScreen #newFlightFormWrap #flightDep1::-webkit-datetime-edit-fields-wrapper,
-  #payrollScreen #newFlightFormWrap #flightArr1::-webkit-datetime-edit-fields-wrapper,
-  #payrollScreen #newFlightFormWrap #flightDep2::-webkit-datetime-edit-fields-wrapper,
-  #payrollScreen #newFlightFormWrap #flightArr2::-webkit-datetime-edit-fields-wrapper{
-    padding:0;
-  }
-  #payrollScreen #newFlightFormWrap #flightDep1::-webkit-datetime-edit-hour-field,
-  #payrollScreen #newFlightFormWrap #flightArr1::-webkit-datetime-edit-hour-field,
-  #payrollScreen #newFlightFormWrap #flightDep2::-webkit-datetime-edit-hour-field,
-  #payrollScreen #newFlightFormWrap #flightArr2::-webkit-datetime-edit-hour-field,
-  #payrollScreen #newFlightFormWrap #flightDep1::-webkit-datetime-edit-minute-field,
-  #payrollScreen #newFlightFormWrap #flightArr1::-webkit-datetime-edit-minute-field,
-  #payrollScreen #newFlightFormWrap #flightDep2::-webkit-datetime-edit-minute-field,
-  #payrollScreen #newFlightFormWrap #flightArr2::-webkit-datetime-edit-minute-field{
-    padding:0;
-  }
   #payrollScreen #newFlightFormWrap #flightDep1::-webkit-date-and-time-value,
   #payrollScreen #newFlightFormWrap #flightArr1::-webkit-date-and-time-value,
   #payrollScreen #newFlightFormWrap #flightDep2::-webkit-date-and-time-value,
@@ -503,8 +485,6 @@ color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto
   #payrollScreen #newFlightFormWrap #flightArr2::-webkit-calendar-picker-indicator{
     margin:0;
     opacity:.9;
-    width:16px;
-    min-width:16px;
   }
 }
 
@@ -545,6 +525,13 @@ color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto
   font-size:11px;
   font-weight:800;
   color:#64748b;
+}
+
+#payrollScreen .chipbox.full .tech-grid > .field > .label,
+#payrollScreen .chipbox.full .tech-identity-row .field > .label{
+  font-size:16px !important;
+  font-weight:800 !important;
+  line-height:1.15 !important;
 }
 
 #payrollScreen .input{
@@ -733,10 +720,11 @@ color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto
 }
 
 #payrollScreen .summary-box .k{
-  font-size:11px;
+  font-size:16px;
   font-weight:800;
   color:#64748b;
   margin-bottom:5px;
+  line-height:1.15;
   text-align:center;
 }
 
@@ -842,8 +830,10 @@ color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto
 }
 
 #payrollScreen .chipbox .k{
+  font-size:16px;
   font-weight:800;
   color:#64748b;
+  line-height:1.15;
 }
 
 #payrollScreen .display-value{
@@ -1198,6 +1188,13 @@ color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto
   .view-switch .btn{
     min-width:0;
     width:100%;
+  }
+
+  #payrollScreen .chipbox.full .tech-grid > .field > .label,
+  #payrollScreen .chipbox.full .tech-identity-row .field > .label{
+    font-size:12px !important;
+    font-weight:800 !important;
+    line-height:1.15 !important;
   }
 
   .header-copy{
@@ -1867,7 +1864,7 @@ color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto
       <div id="masterDataMount"></div>
     </div>
   </div>
-  <div class="app-version-footer">גרסה 181.202</div>
+  <div class="app-version-footer">גרסה 181.207</div>
 </div>
 
 <datalist id="routeOptionsList">
