@@ -108,10 +108,37 @@ color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto
 .tech-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .flight-tech-title{font-size:13px !important;font-weight:800 !important;color:var(--text) !important;margin-bottom:8px}
 @media (min-width:769px){#payrollScreen .flight-tech-title{font-size:20px !important;font-weight:900 !important;letter-spacing:-0.01em;color:#0d3558 !important}}
+@media (min-width:769px){
+  #payrollScreen .tech-grid{
+    grid-template-columns:repeat(4,minmax(0,1fr));
+  }
+  #payrollScreen .tech-grid > .field:nth-child(1),
+  #payrollScreen .tech-grid > .field:nth-child(2){
+    grid-column:span 2;
+  }
+  #payrollScreen .tech-grid > .field:not(.time-pair):not(.change-field),
+  #payrollScreen .tech-grid > .tech-identity-row{
+    grid-column:1 / -1;
+  }
+  #payrollScreen .tech-grid > .field.time-pair{
+    grid-column:auto;
+  }
+  #payrollScreen .tech-grid > .field:nth-child(1),
+  #payrollScreen .tech-grid > .field:nth-child(2){
+    grid-column:span 2 !important;
+  }
+  #payrollScreen .tech-identity-row.tech-identity-row-four{
+    grid-template-columns:repeat(4,minmax(0,1fr));
+  }
+  #payrollScreen .mobile-change-field{
+    display:none;
+  }
+}
 
 .tech-identity-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,.5fr) minmax(0,.5fr);gap:8px;direction:ltr;grid-column:1/-1;align-items:end}
 .tech-identity-row .field{min-width:0}
 .tech-identity-row .field.aircraft-field{direction:rtl}
+.tech-identity-row .field.change-field{direction:rtl}
 .tech-identity-row .field.dh-field{direction:rtl}
 .tech-identity-row .field.sequence-field{direction:rtl}
 .tech-grid > .field > .label,
@@ -129,10 +156,33 @@ color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto
 .shabbat-toggle-inline{display:inline-flex;align-items:center;gap:6px;font-size:10px;color:var(--muted);font-weight:800;white-space:nowrap}
 .shabbat-toggle-inline input{width:14px;height:14px;margin:0}
 @media (max-width:680px){
+  .tech-identity-row.tech-identity-row-four{
+    grid-template-columns:minmax(0,1fr) minmax(0,.5fr) minmax(0,.5fr);
+  }
+  .tech-identity-row .desktop-change-field{
+    display:none;
+  }
   .tech-identity-row{grid-template-columns:minmax(0,1fr) minmax(0,.5fr) minmax(0,.5fr);gap:6px}
-  .tech-identity-row .field.aircraft-field .input,.tech-identity-row .field.sequence-field .input{min-height:44px;padding:9px 10px;font-size:12px}
-  .tech-sequence-input{font-size:10px;padding:9px 6px}
-  .tech-dh-label{min-height:44px;padding:0 6px;font-size:11px;gap:6px}
+  .tech-identity-row .field.aircraft-field .input,
+  .tech-identity-row .field.sequence-field .input,
+  .tech-identity-row .field.dh-field .tech-dh-label{
+    min-height:44px;
+    height:44px;
+    padding:9px 10px;
+    font-size:12px;
+    line-height:1.2;
+    box-sizing:border-box;
+    border-radius:12px;
+  }
+  .tech-sequence-input{
+    font-size:12px;
+    padding:9px 10px;
+    text-align:center;
+  }
+  .tech-dh-label{
+    gap:6px;
+    white-space:nowrap;
+  }
   #payrollScreen .tech-grid{
     grid-template-columns:1fr 1fr;
     gap:8px;
@@ -157,6 +207,7 @@ color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto
   .month-row-header,.month-row{grid-template-columns:minmax(0,1fr) 62px 62px 62px 62px 24px;gap:6px}
   .month-row-header{padding:0 4px 6px;font-size:9px}.month-row{padding:8px 6px;min-height:44px}
   .month-title{font-size:12px}.month-sub{display:none}.month-pill{font-size:10px;padding:6px 4px}.month-pill-label{font-size:8px;margin-bottom:3px}.month-pill-value{font-size:10px}.toggle{width:24px;height:24px;border-radius:8px}
+  #payrollScreen .flight-tech-title{font-size:20px !important;text-align:right !important;width:100%}
   .summary-grid{grid-template-columns:1fr 1fr;gap:6px}
   .summary-box{padding:8px}.summary-box .k{font-size:11px;line-height:1.2}.summary-box .v{font-size:15px}
   #payrollScreen .fix-hours-box{order:1}
@@ -532,6 +583,7 @@ color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto
   font-size:16px !important;
   font-weight:800 !important;
   line-height:1.15 !important;
+  text-align:center !important;
 }
 
 #payrollScreen .chipbox.full .tech-grid > .field > .input,
@@ -1896,7 +1948,7 @@ color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto
       <div id="masterDataMount"></div>
     </div>
   </div>
-  <div class="app-version-footer">גרסה 181.220</div>
+  <div class="app-version-footer">גרסה 181.234</div>
 </div>
 
 <datalist id="routeOptionsList">
@@ -4391,16 +4443,17 @@ function renderTechEditor(monthName,f){
       <div class="tech-grid">
         <div class="field"><div class="label">תאריך</div><input id="tech-date-${f.id}" class="input date-input-ltr" type="date" lang="en-GB" dir="ltr" value="${escapeHtml(dateToInputValue(f.date||'', monthName))}"></div>
         <div class="field"><div class="label">נתיב / פעילות</div><input id="tech-route-${f.id}" class="input" list="routeOptionsList" autocomplete="off" value="${escapeHtml(f.route||'')}"></div>
-        <div class="tech-identity-row">
+        <div class="tech-identity-row tech-identity-row-four">
           <div class="field aircraft-field"><div class="label">A/C</div><select id="tech-aircraft-${f.id}" class="input">${renderTechAircraftOptions(f.aircraft || '')}</select></div>
-          ${usesMonthlySequenceOrdering(monthName) ? `<div class="field sequence-field"><div class="label">מס׳ רץ חודשי</div><input id="tech-sequence-${f.id}" class="input tech-sequence-input" inputmode="numeric" value="${escapeHtml(String(getFlightSequenceNumber(f, 0)))}"></div>` : '<div class="field sequence-field"></div>'}
+          <div class="field change-field desktop-change-field"><div class="label">שינוי</div><select id="tech-change-${f.id}" class="input"><option value="">בחר שינוי</option><option value="4"${displayChangeCode(f.changeCode)==='4' ? ' selected' : ''}>4</option><option value="6"${displayChangeCode(f.changeCode)==='6' ? ' selected' : ''}>6</option></select></div>
           <div class="field dh-field"><div class="label">DH</div><label class="tech-dh-label"><input id="tech-dh-${f.id}" type="checkbox" ${containsDhNote(f.note) ? 'checked' : ''}><span>טיסת DH</span></label></div>
+          ${usesMonthlySequenceOrdering(monthName) ? `<div class="field sequence-field"><div class="label">פעילות מס׳</div><input id="tech-sequence-${f.id}" class="input tech-sequence-input" inputmode="numeric" value="${escapeHtml(String(getFlightSequenceNumber(f, 0)))}"></div>` : '<div class="field sequence-field"></div>'}
         </div>
         ${renderTechTimeField('המראה 1', `tech-dep1-${f.id}`, f.dep1 || '', monthName, f.id)}
         ${renderTechTimeField('נחיתה 1', `tech-arr1-${f.id}`, f.arr1 || '', monthName, f.id)}
         ${renderTechTimeField('המראה 2', `tech-dep2-${f.id}`, f.dep2 || '', monthName, f.id)}
         ${renderTechTimeField('נחיתה 2', `tech-arr2-${f.id}`, f.arr2 || '', monthName, f.id)}
-        <div class="field change-field"><div class="label">שינוי</div><select id="tech-change-${f.id}" class="input"><option value="">בחר שינוי</option><option value="4"${displayChangeCode(f.changeCode)==='4' ? ' selected' : ''}>4</option><option value="6"${displayChangeCode(f.changeCode)==='6' ? ' selected' : ''}>6</option></select></div>
+        <div class="field change-field mobile-change-field"><div class="label">שינוי</div><select id="tech-change-mobile-${f.id}" class="input" onchange="document.getElementById('tech-change-${f.id}').value=this.value"><option value="">בחר שינוי</option><option value="4"${displayChangeCode(f.changeCode)==='4' ? ' selected' : ''}>4</option><option value="6"${displayChangeCode(f.changeCode)==='6' ? ' selected' : ''}>6</option></select></div>
       </div>
       <div class="actions">
         <button class="btn primary" type="button" onclick="updateFlightTech('${monthName}','${f.id}')">עדכן טיסה</button>
@@ -4773,9 +4826,6 @@ function buildLogbookRows(){
 
   const rows = baseRows.map(baseRow => {
     const manual = getImportedLogbookManualEntry(baseRow);
-    const resolvedBlock = baseRow.isPayrollRow
-      ? String(baseRow.block || '00:00')
-      : (manual.block || baseRow.block || '00:00');
     return {
       key: baseRow.key,
       serial: baseRow.serial || '',
@@ -4791,7 +4841,7 @@ function buildLogbookRows(){
       monthName: baseRow.monthName || '',
       sequenceNumber: Number(baseRow.sequenceNumber || 0),
       departureTime: String(baseRow.departureTime || '').trim(),
-      block: resolvedBlock,
+      block: (manual.block || baseRow.block || '00:00'),
       takeoffs: String(manual.takeoffs || '').trim() !== '' ? manual.takeoffs : String(baseRow.takeoffs || ''),
       landings: String(manual.landings || '').trim() !== '' ? manual.landings : String(baseRow.landings || ''),
       rem: String(manual.rem || '').trim() !== '' ? manual.rem : String(baseRow.rem || ''),
