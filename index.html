@@ -1896,7 +1896,7 @@ color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto
       <div id="masterDataMount"></div>
     </div>
   </div>
-  <div class="app-version-footer">גרסה 181.215</div>
+  <div class="app-version-footer">גרסה 181.220</div>
 </div>
 
 <datalist id="routeOptionsList">
@@ -3271,8 +3271,10 @@ function excelWeekday(dateLabel){
   return js === 6 ? 7 : js+1; // Excel WEEKDAY(...,1)
 }
 function getEffectiveBlockMinutes(f){
+  const calculated = calculateBlockMinutes(f);
+  if (calculated > 0) return calculated;
   if (isValidDurationHHMM(f?.manualBlock)) return toMinutes(f.manualBlock);
-  return calculateBlockMinutes(f);
+  return 0;
 }
 function calculateFixCalc(f){
   const key = normalizeRouteKey(f.route);
@@ -4771,6 +4773,9 @@ function buildLogbookRows(){
 
   const rows = baseRows.map(baseRow => {
     const manual = getImportedLogbookManualEntry(baseRow);
+    const resolvedBlock = baseRow.isPayrollRow
+      ? String(baseRow.block || '00:00')
+      : (manual.block || baseRow.block || '00:00');
     return {
       key: baseRow.key,
       serial: baseRow.serial || '',
@@ -4786,7 +4791,7 @@ function buildLogbookRows(){
       monthName: baseRow.monthName || '',
       sequenceNumber: Number(baseRow.sequenceNumber || 0),
       departureTime: String(baseRow.departureTime || '').trim(),
-      block: (manual.block || baseRow.block || '00:00'),
+      block: resolvedBlock,
       takeoffs: String(manual.takeoffs || '').trim() !== '' ? manual.takeoffs : String(baseRow.takeoffs || ''),
       landings: String(manual.landings || '').trim() !== '' ? manual.landings : String(baseRow.landings || ''),
       rem: String(manual.rem || '').trim() !== '' ? manual.rem : String(baseRow.rem || ''),
