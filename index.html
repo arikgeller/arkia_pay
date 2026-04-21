@@ -1948,7 +1948,7 @@ color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto
       <div id="masterDataMount"></div>
     </div>
   </div>
-  <div class="app-version-footer">גרסה 181.234</div>
+  <div class="app-version-footer">גרסה 181.236</div>
 </div>
 
 <datalist id="routeOptionsList">
@@ -3816,17 +3816,26 @@ function getMonthActivityBreakdown(month){
     if (!minutes) return;
     let label = 'שהייה';
     if (!routeIsStay(flight.route) && routeUsesActivityPay(flight.route)) label = getFlightActivityRouteLabel(flight);
-    const current = Number(totals.get(label) || 0);
-    totals.set(label, current + minutes);
+    const current = totals.get(label) || { payMinutes: 0, stayHoursMinutes: 0 };
+    current.payMinutes += minutes;
+    if (label === 'שהייה') {
+      const stayHours = calculateStayDurationMinutes(month, flight, null, null);
+      current.stayHoursMinutes += Number(stayHours || 0);
+    }
+    totals.set(label, current);
   });
   return Array.from(totals.entries())
-    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'he'))
-    .map(([label, minutes]) => ({ label, value: toHHMM(minutes) }));
+    .sort((a, b) => b[1].payMinutes - a[1].payMinutes || a[0].localeCompare(b[0], 'he'))
+    .map(([label, entry]) => ({
+      label,
+      value: toHHMM(entry.payMinutes),
+      stayHours: label === 'שהייה' ? toHHMM(entry.stayHoursMinutes) : ''
+    }));
 }
 function renderMonthActivityBreakdown(month){
   const items = getMonthActivityBreakdown(month);
   if (!items.length) return '';
-  return items.map(item => `<div class="note activity-breakdown-line">${escapeHtml(item.label)}: ${escapeHtml(item.value)}</div>`).join('');
+  return items.map(item => `<div class="note activity-breakdown-line">${escapeHtml(item.label)}: ${escapeHtml(item.value)}${item.stayHours ? ` / ${escapeHtml(item.stayHours)}` : ''}</div>`).join('');
 }
 function applyCalculatedValue(part, value){ if (part && !isManual(part)) part.calc = value; }
 function forceDerivedCalculatedValue(part, value){ if (!part) return; part.manual = ''; part.calc = value; }
@@ -4051,7 +4060,7 @@ function applyImportedExcelCalcs(){
       if (!row) return;
       ensureFlightShape(f);
       updateFlightDerived(f);
-      f.block = row.block || f.block;
+      f.block = toHHMM(getEffectiveBlockMinutes(f));
       if (Object.prototype.hasOwnProperty.call(row,'changeCode')) f.changeCode = normalizeChangeCode(row.changeCode);
       ['fix','stay','shabbat','daysB','changePay','extras'].forEach(key => {
         if (f.parts[key] && !isManual(f.parts[key])) f.parts[key].calc = row[key] || '00:00';
@@ -4841,7 +4850,7 @@ function buildLogbookRows(){
       monthName: baseRow.monthName || '',
       sequenceNumber: Number(baseRow.sequenceNumber || 0),
       departureTime: String(baseRow.departureTime || '').trim(),
-      block: (manual.block || baseRow.block || '00:00'),
+      block: (baseRow.isPayrollRow ? (baseRow.block || manual.block || '00:00') : (manual.block || baseRow.block || '00:00')),
       takeoffs: String(manual.takeoffs || '').trim() !== '' ? manual.takeoffs : String(baseRow.takeoffs || ''),
       landings: String(manual.landings || '').trim() !== '' ? manual.landings : String(baseRow.landings || ''),
       rem: String(manual.rem || '').trim() !== '' ? manual.rem : String(baseRow.rem || ''),
@@ -6508,7 +6517,7 @@ function makeImportedFlight(cfg){
   const f = makeFlight(cfg.id, cfg.row, cfg.date, cfg.route, cfg.dep1, cfg.arr1, cfg.dep2, cfg.arr2);
   f.subtitle = computeSubtitle(cfg.route);
   f.times = buildTimes(cfg.dep1, cfg.arr1, cfg.dep2, cfg.arr2);
-  f.block = cfg.block || toHHMM(calculateBlockMinutes(f));
+  f.block = toHHMM(calculateBlockMinutes(f));
   if (cfg.parts) {
     Object.entries(cfg.parts).forEach(([key, value]) => {
       if (f.parts[key]) f.parts[key].calc = String(value ?? (f.parts[key].type === 'number' ? '0' : '00:00'));
