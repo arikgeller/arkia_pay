@@ -1948,7 +1948,7 @@ color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto
       <div id="masterDataMount"></div>
     </div>
   </div>
-  <div class="app-version-footer">גרסה 181.237</div>
+  <div class="app-version-footer">גרסה 181.240</div>
 </div>
 
 <datalist id="routeOptionsList">
@@ -2555,6 +2555,11 @@ function buildStayEshelAllocation(month, logicalFlights){
     ensureFlightShape(flight);
     const routeKey = normalizeRouteKey(flight.route);
     if (flight.startsAtBase && !flight.returnsToBase) {
+      const destination = normalizeRouteKey(flight.destination || '');
+      if (destination === 'etm') {
+        activeChain = null;
+        return;
+      }
       const arrivalTime = getFlightArrivalTimeForLogic(flight);
       const arrivalDateTime = buildFlightDateTime(month.monthName, flight.date, arrivalTime);
       activeChain = {
@@ -3334,6 +3339,17 @@ function routeUsesActivityPay(route){
   const r = normalizeRouteKey(route);
   return !!r && !routeUsesFlightFix(r);
 }
+function getNormalizedRouteSegments(route){
+  return normalizeRouteKey(route).split(/\s+/).filter(Boolean);
+}
+function routeEndsAtEtm(route){
+  const parts = getNormalizedRouteSegments(route);
+  return parts.length >= 2 && parts[parts.length - 1] === 'etm';
+}
+function routeStartsAtEtm(route){
+  const parts = getNormalizedRouteSegments(route);
+  return parts.length >= 2 && parts[0] === 'etm';
+}
 function getConfiguredRouteDuration(route){
   const key = normalizeRouteKey(route);
   const fixMap = getEffectiveRouteFixMap();
@@ -3581,6 +3597,29 @@ function getFlightTimelineBounds(monthName, flight){
   }
   return { startDateTime, endDateTime: null };
 }
+function findEtmStayAdjacentFlights(month, stayFlight){
+  if (!routeIsStay(stayFlight?.route)) return { prevFlight: null, nextFlight: null };
+  const stayDateValue = dateToInputValue(stayFlight?.date || '', month?.monthName || '');
+  if (!stayDateValue) return { prevFlight: null, nextFlight: null };
+  const stayDayStart = new Date(`${stayDateValue}T00:00:00`);
+  const stayDayEnd = new Date(stayDayStart.getTime() + (24 * 60 * 60 * 1000));
+  const candidates = (Array.isArray(month?.flights) ? month.flights : [])
+    .map(flight => ({ flight, bounds: getFlightTimelineBounds(month?.monthName || '', flight) }))
+    .filter(item => item.bounds.startDateTime && item.bounds.endDateTime && !routeIsStay(item.flight?.route));
+  let prevCandidate = null;
+  let nextCandidate = null;
+  candidates.forEach(item => {
+    if (routeEndsAtEtm(item.flight.route) && item.bounds.endDateTime < stayDayEnd) {
+      if (!prevCandidate || item.bounds.endDateTime > prevCandidate.bounds.endDateTime) prevCandidate = item;
+    }
+    if (routeStartsAtEtm(item.flight.route) && item.bounds.startDateTime >= stayDayStart) {
+      if (!nextCandidate || item.bounds.startDateTime < nextCandidate.bounds.startDateTime) nextCandidate = item;
+    }
+  });
+  if (!prevCandidate || !nextCandidate) return { prevFlight: null, nextFlight: null };
+  if (prevCandidate.bounds.endDateTime > nextCandidate.bounds.startDateTime) return { prevFlight: null, nextFlight: null };
+  return { prevFlight: prevCandidate.flight, nextFlight: nextCandidate.flight };
+}
 function buildFlightActivityGroups(month){
   const logicalFlights = getFlightsInLogicalSequence(month);
   const monthName = month?.monthName || '';
@@ -3678,10 +3717,27 @@ function calculateStayPayFromDuration(minutes){
   }
   return best || '00:00';
 }
+function calculateEtmStayPayOverride(month, stayFlight){
+  if (!routeIsStay(stayFlight?.route)) return '';
+  const { prevFlight, nextFlight } = findEtmStayAdjacentFlights(month, stayFlight);
+  if (!prevFlight || !nextFlight) return '';
+  const prevArrivalTime = getFlightArrivalTimeForLogic(prevFlight);
+  const nextDepartureTime = getFlightDepartureTimeForLogic(nextFlight);
+  const prevArrivalDateTime = buildFlightDateTime(month.monthName, prevFlight.date, prevArrivalTime);
+  const nextDepartureDateTime = buildFlightDateTime(month.monthName, nextFlight.date, nextDepartureTime);
+  if (!prevArrivalDateTime || !nextDepartureDateTime) return '';
+  const stayMinutes = Math.max(0, Math.round((nextDepartureDateTime.getTime() - prevArrivalDateTime.getTime()) / 60000));
+  if (stayMinutes <= 0) return '';
+  return stayMinutes >= toMinutes('12:00') ? '03:12' : '01:36';
+}
 function calculateActivityCalc(month, f, prev, next){
   const routeKey = normalizeRouteKey(f?.route);
   if (!routeKey) return '00:00';
-  if (routeIsStay(routeKey)) return calculateStayPayFromDuration(calculateStayDurationMinutes(month, f, prev, next));
+  if (routeIsStay(routeKey)) {
+    const etmOverride = calculateEtmStayPayOverride(month, f);
+    if (etmOverride) return etmOverride;
+    return calculateStayPayFromDuration(calculateStayDurationMinutes(month, f, prev, next));
+  }
   if (routeUsesActivityPay(routeKey)) return getConfiguredRouteDuration(routeKey);
   if (routeUsesFlightFix(routeKey)) {
     const stayMinutes = calculateStayDurationMinutes(month, f, prev, next);
@@ -3965,7 +4021,8 @@ function recalcSingleFlightAuto(f,ctx){
   updateFlightDerived(f);
   const activityPay = calculateActivityCalc(ctx.month, f, ctx.prevFlight, ctx.nextFlight);
   applyCalculatedValue(f.parts.fix, calculateFixCalc(f));
-  applyCalculatedValue(f.parts.stay, activityPay);
+  if (routeIsStay(f.route) && calculateEtmStayPayOverride(ctx.month, f)) forceDerivedCalculatedValue(f.parts.stay, activityPay);
+  else applyCalculatedValue(f.parts.stay, activityPay);
   applyCalculatedValue(f.parts.shabbat, calculateShabbatCalc(f, ctx.monthName));
   applyCalculatedValue(f.parts.daysB, calculateDaysBCalc(f, ctx.cumulativeDays, toMinutes(activityPay), ctx.standbyL));
   applyCalculatedValue(f.parts.changePay, calculateChangePayCalc(f));
