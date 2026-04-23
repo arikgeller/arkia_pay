@@ -1948,7 +1948,7 @@ color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto
       <div id="masterDataMount"></div>
     </div>
   </div>
-  <div class="app-version-footer">גרסה 181.236</div>
+  <div class="app-version-footer">גרסה 181.237</div>
 </div>
 
 <datalist id="routeOptionsList">
@@ -2945,6 +2945,34 @@ function buildDateAt(dateLabel, hhmm, fallbackYear){
   dt.setMinutes(toMinutes(hhmm));
   return dt;
 }
+function buildDateTimeFromBaseDate(baseDate, hhmm){
+  if (!(baseDate instanceof Date) || !isValidTime(hhmm)) return null;
+  const dt = new Date(baseDate.getFullYear(), baseDate.getMonth(), baseDate.getDate(), 0, 0, 0, 0);
+  dt.setMinutes(toMinutes(hhmm));
+  return dt;
+}
+function getFlightLegDateTimeRanges(f, monthName){
+  const fallbackYear = inferYearFromMonthName(monthName);
+  const baseDate = parseDateLabelWithYear(f?.date, fallbackYear);
+  if (!baseDate) return [];
+  const flightBaseDate = new Date(baseDate.year, baseDate.month - 1, baseDate.day, 0, 0, 0, 0);
+  const legs = [];
+  const appendLeg = (dep, arr, minStartDateTime = null) => {
+    if (!isValidTime(dep) || !isValidTime(arr)) return;
+    let start = buildDateTimeFromBaseDate(flightBaseDate, dep);
+    if (!(start instanceof Date)) return;
+    if (minStartDateTime instanceof Date) {
+      while (start.getTime() < minStartDateTime.getTime()) start.setDate(start.getDate() + 1);
+    }
+    let end = buildDateTimeFromBaseDate(start, arr);
+    if (!(end instanceof Date)) return;
+    while (end.getTime() <= start.getTime()) end.setDate(end.getDate() + 1);
+    legs.push({ start, end });
+  };
+  appendLeg(f?.dep1, f?.arr1, null);
+  appendLeg(f?.dep2, f?.arr2, legs.length ? legs[legs.length - 1].end : null);
+  return legs;
+}
 function buildHolidayWindowBounds(window){
   const [sy, sm, sd] = String(window.start).split('-').map(Number);
   const [ey, em, ed] = String(window.end).split('-').map(Number);
@@ -2954,12 +2982,9 @@ function buildHolidayWindowBounds(window){
   return { start, endExclusive };
 }
 function getFlightDateTimeRange(f, monthName){
-  const fallbackYear = inferYearFromMonthName(monthName);
-  const start = buildDateAt(f.date, firstDep(f), fallbackYear);
-  const end = buildDateAt(f.date, lastArr(f), fallbackYear);
-  if (!(start instanceof Date) || !(end instanceof Date)) return null;
-  if (end.getTime() <= start.getTime()) end.setDate(end.getDate() + 1);
-  return { start, end };
+  const legs = getFlightLegDateTimeRanges(f, monthName);
+  if (!legs.length) return null;
+  return { start: legs[0].start, end: legs[legs.length - 1].end };
 }
 function flightOverlapsAutoHoliday(f, monthName){
   const range = getFlightDateTimeRange(f, monthName);
@@ -3669,6 +3694,65 @@ function calculateActivityCalc(month, f, prev, next){
 function effectiveFixMinutes(f){
   return toMinutes(finalValue(f.parts?.fix || { calc: calculateFixCalc(f), manual: '' }));
 }
+function getDateRangeOverlapMinutes(start, end, overlapStart, overlapEnd){
+  if (!(start instanceof Date) || !(end instanceof Date) || !(overlapStart instanceof Date) || !(overlapEnd instanceof Date)) return 0;
+  const actualStart = Math.max(start.getTime(), overlapStart.getTime());
+  const actualEnd = Math.min(end.getTime(), overlapEnd.getTime());
+  return actualEnd > actualStart ? Math.round((actualEnd - actualStart) / 60000) : 0;
+}
+function buildWeeklyShabbatWindows(rangeStart, rangeEnd){
+  if (!(rangeStart instanceof Date) || !(rangeEnd instanceof Date)) return [];
+  const cursor = new Date(rangeStart.getFullYear(), rangeStart.getMonth(), rangeStart.getDate() - 2, 0, 0, 0, 0);
+  const limit = new Date(rangeEnd.getFullYear(), rangeEnd.getMonth(), rangeEnd.getDate() + 2, 0, 0, 0, 0);
+  const windows = [];
+  while (cursor.getTime() <= limit.getTime()) {
+    if (cursor.getDay() === 5) {
+      const start = new Date(cursor.getFullYear(), cursor.getMonth(), cursor.getDate(), 16, 0, 0, 0);
+      const endExclusive = new Date(cursor.getFullYear(), cursor.getMonth(), cursor.getDate() + 2, 0, 0, 0, 0);
+      windows.push({ start, endExclusive });
+    }
+    cursor.setDate(cursor.getDate() + 1);
+  }
+  return windows;
+}
+function getMergedShabbatHolidayWindows(rangeStart, rangeEnd){
+  const holidayWindows = HOLIDAY_WINDOWS
+    .map(buildHolidayWindowBounds)
+    .filter(Boolean)
+    .filter(bounds => rangeStart < bounds.endExclusive && rangeEnd > bounds.start);
+  const weeklyWindows = buildWeeklyShabbatWindows(rangeStart, rangeEnd);
+  const merged = [...weeklyWindows, ...holidayWindows]
+    .sort((a, b) => a.start.getTime() - b.start.getTime());
+  if (!merged.length) return [];
+  const result = [merged[0]];
+  for (let i = 1; i < merged.length; i += 1) {
+    const current = merged[i];
+    const prev = result[result.length - 1];
+    if (current.start.getTime() <= prev.endExclusive.getTime()) {
+      if (current.endExclusive.getTime() > prev.endExclusive.getTime()) prev.endExclusive = current.endExclusive;
+      continue;
+    }
+    result.push(current);
+  }
+  return result;
+}
+function calculateShabbatMinutesFromActualTimeline(f, monthName){
+  const fixMinutes = effectiveFixMinutes(f);
+  if (!fixMinutes) return 0;
+  const legs = getFlightLegDateTimeRanges(f, monthName);
+  if (!legs.length) return 0;
+  const rangeStart = legs[0].start;
+  const rangeEnd = legs[legs.length - 1].end;
+  const windows = getMergedShabbatHolidayWindows(rangeStart, rangeEnd);
+  if (!windows.length) return 0;
+  const fixPerLeg = fixMinutes / legs.length;
+  const total = legs.reduce((sum, leg) => {
+    const overlapMinutes = windows.reduce((acc, window) => acc + getDateRangeOverlapMinutes(leg.start, leg.end, window.start, window.endExclusive), 0);
+    if (!overlapMinutes) return sum;
+    return sum + (Math.min(fixPerLeg, overlapMinutes) * 0.5);
+  }, 0);
+  return Math.round(total);
+}
 function saturdaySingleLegHelper(f){
   const j = effectiveFixMinutes(f);
   const g = lastDep(f), h = lastArr(f);
@@ -3705,13 +3789,9 @@ function fridayTwoLegHelper(f){
 function calculateShabbatCalc(f, monthName){
   const curr = normalizeRouteKey(f.route);
   if (curr === 'sby' || curr === 'sic') return '00:00';
-  const wd = excelWeekday(f.date);
   const forced = !!f.manualShabbat;
-  const autoHoliday = flightOverlapsAutoHoliday(f, monthName);
-  let mins = 0;
-  if (wd === 7 || autoHoliday) mins = hasTwoLegs(f) ? saturdayTwoLegHelper(f) : saturdaySingleLegHelper(f);
-  else if (wd === 6) mins = hasTwoLegs(f) ? fridayTwoLegHelper(f) : fridaySingleLegHelper(f);
-  else if (forced) mins = hasTwoLegs(f)
+  let mins = calculateShabbatMinutesFromActualTimeline(f, monthName);
+  if (!mins && forced) mins = hasTwoLegs(f)
     ? Math.max(fridayTwoLegHelper(f), saturdayTwoLegHelper(f))
     : Math.max(fridaySingleLegHelper(f), saturdaySingleLegHelper(f));
   return mins ? toHHMM(mins) : '00:00';
