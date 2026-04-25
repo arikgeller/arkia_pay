@@ -1951,7 +1951,7 @@ color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto
       <div id="masterDataMount"></div>
     </div>
   </div>
-  <div class="app-version-footer">גרסה 181.252</div>
+  <div class="app-version-footer">גרסה 181.253</div>
 </div>
 
 <datalist id="routeOptionsList">
@@ -7049,7 +7049,9 @@ function triggerHilanImport(){
 }
 let pendingHilanShellImport = null;
 function finalizeHilanImport(result){
-  const msg = `עודכנו ${result.imported} פעילויות בהצלחה.` + (result.skipped ? ` דולגו ${result.skipped} שורות לא מזוהות.` : '');
+  const msg = `עודכנו ${result.imported} פעילויות בהצלחה.`
+    + (result.unchanged ? ` ${result.unchanged} פעילויות לא שונו.` : '')
+    + (result.skipped ? ` דולגו ${result.skipped} שורות לא מזוהות.` : '');
   alert(msg);
   scheduleCloudSave();
   render();
@@ -7382,21 +7384,25 @@ async function importHilanHTM(file, companionFile=null){
     if (item.mapping.route) return normalizeRouteKey(flight.route) === normalizeRouteKey(item.mapping.route);
     return routeUsesFlightFix(flight.route);
   };
+  const sameTimePair = (depA, arrA, depB, arrB) => String(depA || '') === String(depB || '') && String(arrA || '') === String(arrB || '');
   const writeImportedSingleLegTimes = (flight, item) => {
     ensureFlightShape(flight);
     const hasLeg1 = !!String(flight.dep1 || '').trim() || !!String(flight.arr1 || '').trim();
     const hasLeg2 = !!String(flight.dep2 || '').trim() || !!String(flight.arr2 || '').trim();
     if (hasLeg1 || !hasLeg2) {
+      if (sameTimePair(flight.dep1, flight.arr1, item.dep1, item.arr1)) return false;
       flight.dep1 = item.dep1 || '';
       flight.arr1 = item.arr1 || '';
       if (!hasLeg2) {
         flight.dep2 = '';
         flight.arr2 = '';
       }
-      return;
+      return true;
     }
+    if (sameTimePair(flight.dep2, flight.arr2, item.dep1, item.arr1)) return false;
     flight.dep2 = item.dep1 || '';
     flight.arr2 = item.arr1 || '';
+    return true;
   };
   const groupedParsed = parsed.reduce((acc, item) => {
     const monthName = monthNameFromInputDate(item.isoDate);
@@ -7410,6 +7416,7 @@ async function importHilanHTM(file, companionFile=null){
     return acc;
   }, {});
   let imported = 0;
+  let unchanged = 0;
   const affectedMonths = new Set();
   Object.entries(groupedParsed).forEach(([monthName, byDate]) => {
     const monthObj = model.months.find(m => m.monthName === monthName);
@@ -7428,26 +7435,36 @@ async function importHilanHTM(file, companionFile=null){
           const first = queue[0];
           const second = queue[1];
           if (first && matchesImportedItemToFlight(first, flight)) {
-            flight.dep1 = first.dep1 || '';
-            flight.arr1 = first.arr1 || '';
+            const changed = !sameTimePair(flight.dep1, flight.arr1, first.dep1, first.arr1);
+            if (changed) {
+              flight.dep1 = first.dep1 || '';
+              flight.arr1 = first.arr1 || '';
+              imported += 1;
+            } else {
+              unchanged += 1;
+            }
             queue.shift();
-            imported += 1;
             if (first.mapping.dh) flight.note = 'DH';
           }
           if (second && matchesImportedItemToFlight(second, flight)) {
-            flight.dep2 = second.dep1 || '';
-            flight.arr2 = second.arr1 || '';
+            const changed = !sameTimePair(flight.dep2, flight.arr2, second.dep1, second.arr1);
+            if (changed) {
+              flight.dep2 = second.dep1 || '';
+              flight.arr2 = second.arr1 || '';
+              imported += 1;
+            } else {
+              unchanged += 1;
+            }
             queue.shift();
-            imported += 1;
             if (second.mapping.dh) flight.note = 'DH';
           }
           return;
         }
         const nextItem = queue[0];
         if (!nextItem || !matchesImportedItemToFlight(nextItem, flight)) return;
-        writeImportedSingleLegTimes(flight, nextItem);
+        if (writeImportedSingleLegTimes(flight, nextItem)) imported += 1;
+        else unchanged += 1;
         queue.shift();
-        imported += 1;
         if (nextItem.mapping.dh) flight.note = 'DH';
       });
       skipped += queue.length;
@@ -7458,7 +7475,7 @@ async function importHilanHTM(file, companionFile=null){
     const m = model.months.find(mo => mo.monthName === monthName);
     if (m) recalcMonthFromFlightChange(m);
   });
-  return { imported, skipped };
+  return { imported, unchanged, skipped };
 }
 window.triggerHilanImport = triggerHilanImport;
 window.handleHilanImportFile = handleHilanImportFile;
