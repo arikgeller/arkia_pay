@@ -96,6 +96,7 @@ color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto
 .value-area{min-height:44px;display:flex;flex-direction:column;justify-content:center;gap:4px}
 .display-value{font-size:14px;font-weight:800;cursor:pointer;user-select:none}.calc-hint{font-size:10px;color:var(--muted)}
 .stay-two-col{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:start;direction:rtl}.stay-col{min-width:0;display:flex;flex-direction:column;gap:6px}.stay-col-label{font-size:10px;color:var(--muted);line-height:1.1;white-space:nowrap}.stay-col-value{font-size:14px;font-weight:800;line-height:1}.stay-col-hours{text-align:right}.stay-col-pay{text-align:left}.stay-col-pay .display-value,.stay-col-hours .stay-col-value{font-size:14px;font-weight:800;line-height:1}.stay-col-pay .display-value{cursor:pointer}
+.stay-pay-mobile-value{display:none;font-size:14px;font-weight:800;line-height:1}
 .edit-row{display:flex;gap:6px;align-items:center}.edit-input{flex:1;border:1px solid #cbd5e1;border-radius:10px;background:#fff;padding:8px 10px;font-size:13px;font-weight:700;text-align:center}
 .edit-row.compact{justify-content:center;gap:4px}
 .edit-row.compact .edit-input{flex:0 1 78px;min-width:78px;padding:5px 8px;font-size:12px;border-radius:8px}
@@ -155,7 +156,29 @@ color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto
 .shabbat-k-row{display:flex;align-items:center;justify-content:space-between;gap:8px}
 .shabbat-toggle-inline{display:inline-flex;align-items:center;gap:6px;font-size:10px;color:var(--muted);font-weight:800;white-space:nowrap}
 .shabbat-toggle-inline input{width:14px;height:14px;margin:0}
+.part-subnote-inline{display:flex;align-items:center;justify-content:flex-end;gap:6px;width:100%;margin:-2px 0 6px;text-align:right;font-size:10px;color:var(--muted);font-weight:800;white-space:nowrap}
+.daysb-subnote-inline{position:absolute;top:14px;right:14px;width:auto;margin:0}
 @media (max-width:680px){
+  .daysb-subnote-inline{
+    position:static;
+    width:100%;
+    margin:0 0 6px;
+    justify-content:center;
+    text-align:center;
+  }
+  .chipbox.part-extras.manual{
+    display:flex;
+    flex-direction:column;
+  }
+  .chipbox.part-extras.manual .k{order:1}
+  .chipbox.part-extras.manual .manual-mark{
+    position:static;
+    order:2;
+    align-self:center;
+    margin:0 0 6px;
+  }
+  .chipbox.part-extras.manual .value-area{order:3}
+  .chipbox.part-extras.manual .actions{order:4}
   .tech-identity-row.tech-identity-row-four{
     grid-template-columns:minmax(0,1fr) minmax(0,.5fr) minmax(0,.5fr);
   }
@@ -224,6 +247,19 @@ color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto
   .block,.pay{padding:6px 4px}.details{padding:8px}.blocks{grid-template-columns:1fr 1fr;gap:6px}
   .chipbox{padding:8px}.chipbox .k{font-size:10px;line-height:1.2}
   #payrollScreen .value-area{min-width:0}
+  #payrollScreen .flight .chipbox .stay-two-col{
+    grid-template-columns:1fr;
+    gap:8px;
+    justify-items:center;
+  }
+  #payrollScreen .flight .chipbox .stay-col-label{
+    font-size:9px;
+    line-height:1.05;
+    white-space:normal;
+    max-width:100%;
+  }
+  #payrollScreen .flight .chipbox .stay-col-hours,
+  #payrollScreen .flight .chipbox .stay-col-pay{text-align:center}
   #payrollScreen .edit-row{gap:3px}
   #payrollScreen .edit-input{flex:0 1 58px;max-width:58px;width:58px;padding:3px 4px;font-size:11px}
   #payrollScreen .mini-btn{padding:3px 5px;font-size:9px}
@@ -1951,7 +1987,7 @@ color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto
       <div id="masterDataMount"></div>
     </div>
   </div>
-  <div class="app-version-footer">גרסה 181.253</div>
+  <div class="app-version-footer">גרסה 181.268</div>
 </div>
 
 <datalist id="routeOptionsList">
@@ -3358,7 +3394,9 @@ function getConfiguredRouteDuration(route){
   const fixMap = getEffectiveRouteFixMap();
   if (!Object.prototype.hasOwnProperty.call(fixMap,key)) return '00:00';
   const configuredFix = String(fixMap[key] || '').trim();
-  return configuredFix || '00:00';
+  if (!configuredFix) return '00:00';
+  const normalizedFix = normalizeDurationHHMM(configuredFix);
+  return normalizedFix || configuredFix;
 }
 function excelWeekday(dateLabel){
   const [d,m] = String(dateLabel||'').split('.').map(Number);
@@ -4007,6 +4045,8 @@ function ensureFlightShape(f){
   f.eshelUsd = Number.isFinite(Number(f.eshelUsd)) ? Number(f.eshelUsd) : 0;
   f.manualEshelDays = isValidNumber(f.manualEshelDays) ? String(f.manualEshelDays) : '';
   f.manualShabbat = !!f.manualShabbat;
+  f.cumulativeActivityDays = Number.isFinite(Number(f.cumulativeActivityDays)) ? Number(f.cumulativeActivityDays) : 0;
+  f.cumulativeHoursAccelFix = isValidDurationHHMM(f.cumulativeHoursAccelFix) ? normalizeDurationHHMM(f.cumulativeHoursAccelFix) : '00:00';
 }
 function updateFlightDerived(f){
   ensureFlightShape(f);
@@ -4046,10 +4086,13 @@ function recomputeHoursBAndOffsetForMonth(month){
       lastEligibleFlight = f;
       const beforeExcess = Math.max(0, cumulativeFix - threshold);
       cumulativeFix += effectiveFixMinutes(f);
+      f.cumulativeHoursAccelFix = toHHMM(cumulativeFix);
       const afterExcess = Math.max(0, cumulativeFix - threshold);
       const accelBefore = Math.round(beforeExcess / 2);
       const accelAfter = Math.round(afterExcess / 2);
       hoursBMinutes = Math.max(0, accelAfter - accelBefore);
+    } else {
+      f.cumulativeHoursAccelFix = toHHMM(cumulativeFix);
     }
     if (f.parts.hoursB) f.parts.hoursB.calc = toHHMM(hoursBMinutes);
   });
@@ -4182,6 +4225,7 @@ function recalcMonthFromFlightChange(month){
     const standbyL = calculateStandbyL(f, prevFlight, nextFlight, prevStandbyL);
     const activityIncrement = Number(activityMap.get(String(f.id)) || 0);
     cumulativeDays += activityIncrement;
+    f.cumulativeActivityDays = cumulativeDays;
     recalcSingleFlightAuto(f,{prevFlight,nextFlight,cumulativeDays,standbyL,monthName: month.monthName, month});
     prevStandbyL = standbyL;
   });
@@ -4513,6 +4557,9 @@ function updateFlightTech(monthName, flightId){
 function renderEditablePart(monthName, flightId, key, part){
   const display = finalValue(part);
   const currentValue = getDraft(flightId,key,display);
+  const normalizedCurrentValue = (part?.type === 'duration' || part?.type === 'time')
+    ? (normalizeDurationHHMM(currentValue) || currentValue)
+    : currentValue;
   const invalid = currentValue ? normalizeManualPartValue(part, currentValue) === null : false;
   const month = model.months.find(m=>m.monthName===monthName);
   const flight = month?.flights.find(f=>f.id===flightId);
@@ -4522,7 +4569,7 @@ function renderEditablePart(monthName, flightId, key, part){
   const isActivityRoute = isStay && flight && routeUsesActivityPay(flight.route) && !isStayRoute;
   const isComputedStayRoute = isStay && flight && routeUsesFlightFix(flight.route) && !isStayRoute && !isActivityRoute && isComputedStayPaymentCarrier(month, flight.id) && toMinutes(getFlightStayDurationDisplay(month, flightId)) >= toMinutes(EXCEL_MIN_STAY_FOR_HELPER);
   const shouldUseTimePickerInput = part?.type === 'duration' || part?.type === 'time';
-  const editInputMarkup = `<input data-edit="${draftKey(flightId,key)}" class="edit-input ${invalid?'invalid':''}" ${shouldUseTimePickerInput ? `type="time" step="60" inputmode="numeric" onclick="this.showPicker?.()" onfocus="this.showPicker?.()"` : `type="text"`} value="${escapeHtml(currentValue)}" oninput="updateDraft('${flightId}','${key}',this.value)">`;
+  const editInputMarkup = `<input data-edit="${draftKey(flightId,key)}" class="edit-input ${invalid?'invalid':''}" ${shouldUseTimePickerInput ? `type="time" step="60" inputmode="numeric" onclick="this.showPicker?.()" onfocus="this.showPicker?.()"` : `type="text"`} value="${escapeHtml(normalizedCurrentValue)}" oninput="updateDraft('${flightId}','${key}',this.value)">`;
   const stayDualLayout = isStayRoute ? `
             <div class="stay-two-col">
               <div class="stay-col stay-col-hours">
@@ -4568,12 +4615,24 @@ function renderEditablePart(monthName, flightId, key, part){
           <input type="checkbox" ${!isManual(part) && flight?.manualShabbat ? 'checked' : ''} onchange="toggleManualShabbat('${monthName}','${flightId}',this.checked)">
           <span>חג/שבת</span>
         </label>` : '';
+  const daysBSubnote = key === 'daysB' ? `
+      <div class="part-subnote-inline daysb-subnote-inline">
+        <span>מצטבר</span>
+        <span>${escapeHtml(String(Number(flight?.cumulativeActivityDays || 0)))}</span>
+      </div>` : '';
+  const hoursBSubnote = key === 'hoursB' ? `
+      <div class="part-subnote-inline daysb-subnote-inline">
+        <span>מצטבר</span>
+        <span>${escapeHtml(String(flight?.cumulativeHoursAccelFix || '00:00'))}</span>
+      </div>` : '';
   const displayLabel = isComputedStayRoute ? 'שהייה' : (isActivityRoute ? getFlightActivityRouteLabel(flight) : part.label);
   const topLabel = isStayRoute ? '' : `<div class="k ${isShabbat ? 'shabbat-k-row' : ''}">${isShabbat ? `<span>${displayLabel}</span>${shabbatToggle}` : displayLabel}</div>`;
   return `
-    <div class="chipbox ${isManual(part)?'manual':''}">
+    <div class="chipbox part-${escapeHtml(String(key))} ${isManual(part)?'manual':''}">
       ${isManual(part) ? '<div class="manual-mark">manual</div>' : ''}
       ${topLabel}
+      ${daysBSubnote}
+      ${hoursBSubnote}
       <div class="value-area">
         ${(isStayRoute || isComputedStayRoute) ? stayDualLayout : `
           <div class="edit-row">
