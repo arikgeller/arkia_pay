@@ -96,6 +96,7 @@ color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto
 .value-area{min-height:44px;display:flex;flex-direction:column;justify-content:center;gap:4px}
 .display-value{font-size:14px;font-weight:800;cursor:pointer;user-select:none}.calc-hint{font-size:10px;color:var(--muted)}
 .stay-two-col{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:start;direction:rtl}.stay-col{min-width:0;display:flex;flex-direction:column;gap:6px}.stay-col-label{font-size:10px;color:var(--muted);line-height:1.1;white-space:nowrap}.stay-col-value{font-size:14px;font-weight:800;line-height:1}.stay-col-hours{text-align:right}.stay-col-pay{text-align:left}.stay-col-pay .display-value,.stay-col-hours .stay-col-value{font-size:14px;font-weight:800;line-height:1}.stay-col-pay .display-value{cursor:pointer}
+.stay-accel-note{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:10px;color:var(--muted);font-weight:800;line-height:1.15}
 .stay-pay-mobile-value{display:none;font-size:14px;font-weight:800;line-height:1}
 .edit-row{display:flex;gap:6px;align-items:center}.edit-input{flex:1;border:1px solid #cbd5e1;border-radius:10px;background:#fff;padding:8px 10px;font-size:13px;font-weight:700;text-align:center}
 .edit-row.compact{justify-content:center;gap:4px}
@@ -1987,7 +1988,7 @@ color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto
       <div id="masterDataMount"></div>
     </div>
   </div>
-  <div class="app-version-footer">גרסה 181.268</div>
+  <div class="app-version-footer">גרסה 181.270</div>
 </div>
 
 <datalist id="routeOptionsList">
@@ -2441,6 +2442,12 @@ function ensureMonthForDate(inputDateValue){
   model.months.push(month);
   model.months.sort((a,b) => monthSortKey(b.monthName) - monthSortKey(a.monthName));
   return model.months.find(m => m.monthName === monthName) || month;
+}
+function getNextChronologicalMonth(currentMonth){
+  const currentKey = monthSortKey(currentMonth?.monthName || '');
+  return [...model.months]
+    .filter(month => monthSortKey(month?.monthName || '') > currentKey)
+    .sort((a,b) => monthSortKey(a.monthName) - monthSortKey(b.monthName))[0] || null;
 }
 function displayChangeCode(v){ const s=String(v??'').trim(); return (s==='4' || s==='6') ? s : ''; }
 const ORDERED_FLIGHTS_START_MONTH_KEY = 202604;
@@ -2906,6 +2913,7 @@ const EXCEL_STAY_THRESHOLDS = [
     "11:00"
   ]
 ];
+const EXCEL_STAY_ACCEL_THRESHOLD = '132:00';
 const EXCEL_DAY_START = '00:00';
 const EXCEL_FRIDAY_START = '16:00';
 const EXCEL_OVERNIGHT_SPLIT = '02:00';
@@ -3644,8 +3652,11 @@ function findEtmStayAdjacentFlights(month, stayFlight){
   if (!stayDateValue) return { prevFlight: null, nextFlight: null };
   const stayDayStart = new Date(`${stayDateValue}T00:00:00`);
   const stayDayEnd = new Date(stayDayStart.getTime() + (24 * 60 * 60 * 1000));
-  const candidates = (Array.isArray(month?.flights) ? month.flights : [])
-    .map(flight => ({ flight, bounds: getFlightTimelineBounds(month?.monthName || '', flight) }))
+  const nextMonth = getNextChronologicalMonth(month);
+  const candidateMonths = [month, nextMonth].filter(Boolean);
+  const candidates = candidateMonths
+    .flatMap(sourceMonth => (Array.isArray(sourceMonth?.flights) ? sourceMonth.flights : [])
+      .map(flight => ({ flight, month: sourceMonth, bounds: getFlightTimelineBounds(sourceMonth?.monthName || '', flight) })))
     .filter(item => item.bounds.startDateTime && item.bounds.endDateTime && !routeIsStay(item.flight?.route));
   let prevCandidate = null;
   let nextCandidate = null;
@@ -3661,11 +3672,14 @@ function findEtmStayAdjacentFlights(month, stayFlight){
   if (prevCandidate.bounds.endDateTime > nextCandidate.bounds.startDateTime) return { prevFlight: null, nextFlight: null };
   return { prevFlight: prevCandidate.flight, nextFlight: nextCandidate.flight };
 }
-function buildFlightActivityGroups(month){
-  const logicalFlights = getFlightsInLogicalSequence(month);
-  const monthName = month?.monthName || '';
-  const actualFlights = logicalFlights
-    .map((flight, index) => ({ flight, index, bounds: getFlightTimelineBounds(monthName, flight) }))
+function getStayCrossMonthEntries(month){
+  const months = [month, getNextChronologicalMonth(month)].filter(Boolean)
+    .sort((a,b) => monthSortKey(a.monthName) - monthSortKey(b.monthName));
+  return months.flatMap(sourceMonth => getFlightsInLogicalSequence(sourceMonth).map(flight => ({ flight, month: sourceMonth })));
+}
+function buildFlightActivityGroupsFromEntries(entries){
+  const actualFlights = entries
+    .map((entry, index) => ({ ...entry, index, bounds: getFlightTimelineBounds(entry.month?.monthName || '', entry.flight) }))
     .filter(item => routeUsesFlightFix(item.flight.route) && item.bounds.startDateTime && item.bounds.endDateTime);
   const groups = [];
   let currentGroup = null;
@@ -3694,7 +3708,7 @@ function buildFlightActivityGroups(month){
     const firstIndex = Number(firstItem?.index ?? -1);
     const lastIndex = Number(lastItem?.index ?? -1);
     const hasExplicitStay = firstIndex >= 0 && lastIndex >= firstIndex
-      ? logicalFlights.slice(firstIndex, lastIndex + 1).some(flight => routeIsStay(flight?.route))
+      ? entries.slice(firstIndex, lastIndex + 1).some(entry => routeIsStay(entry?.flight?.route))
       : false;
     return {
       items: group.items,
@@ -3707,12 +3721,16 @@ function buildFlightActivityGroups(month){
     };
   });
 }
+function buildFlightActivityGroups(month){
+  const entries = getFlightsInLogicalSequence(month).map(flight => ({ flight, month }));
+  return buildFlightActivityGroupsFromEntries(entries);
+}
 function findStayActivityGroupForFlight(month, stayFlightId){
-  const logicalFlights = getFlightsInLogicalSequence(month);
-  const stayIndex = logicalFlights.findIndex(flight => String(flight.id) === String(stayFlightId));
+  const entries = getStayCrossMonthEntries(month);
+  const stayIndex = entries.findIndex(entry => String(entry.flight.id) === String(stayFlightId));
   if (stayIndex < 0) return null;
   let matchedGroup = null;
-  buildFlightActivityGroups(month).forEach(group => {
+  buildFlightActivityGroupsFromEntries(entries).forEach(group => {
     if (group.items.some(item => item.index < stayIndex)) matchedGroup = group;
   });
   return matchedGroup;
@@ -3770,6 +3788,23 @@ function calculateEtmStayPayOverride(month, stayFlight){
   const stayMinutes = Math.max(0, Math.round((nextDepartureDateTime.getTime() - prevArrivalDateTime.getTime()) / 60000));
   if (stayMinutes <= 0) return '';
   return stayMinutes >= toMinutes('12:00') ? '03:12' : '01:36';
+}
+function isStayAccelEtmExcluded(month, flight){
+  if (!flight) return false;
+  if (routeIsStay(flight.route)) return !!calculateEtmStayPayOverride(month, flight);
+  if (routeUsesFlightFix(flight.route) && isComputedStayPaymentCarrier(month, flight.id)) {
+    return getNormalizedRouteSegments(flight.route).includes('etm');
+  }
+  return false;
+}
+function isStayAccelEligible(month, flight){
+  ensureFlightShape(flight);
+  const stayDurationMinutes = toMinutes(getFlightStayDurationDisplay(month, flight.id));
+  if (!stayDurationMinutes) return false;
+  const stayPayMinutes = toMinutes(flight.parts?.stay?.calc || '00:00');
+  if (!stayPayMinutes) return false;
+  if (isStayAccelEtmExcluded(month, flight)) return false;
+  return routeIsStay(flight.route) || isComputedStayPaymentCarrier(month, flight.id);
 }
 function calculateActivityCalc(month, f, prev, next){
   const routeKey = normalizeRouteKey(f?.route);
@@ -4047,6 +4082,8 @@ function ensureFlightShape(f){
   f.manualShabbat = !!f.manualShabbat;
   f.cumulativeActivityDays = Number.isFinite(Number(f.cumulativeActivityDays)) ? Number(f.cumulativeActivityDays) : 0;
   f.cumulativeHoursAccelFix = isValidDurationHHMM(f.cumulativeHoursAccelFix) ? normalizeDurationHHMM(f.cumulativeHoursAccelFix) : '00:00';
+  f.cumulativeStayAccelHours = isValidDurationHHMM(f.cumulativeStayAccelHours) ? normalizeDurationHHMM(f.cumulativeStayAccelHours) : '00:00';
+  f.stayAccelPay = isValidDurationHHMM(f.stayAccelPay) ? normalizeDurationHHMM(f.stayAccelPay) : '00:00';
 }
 function updateFlightDerived(f){
   ensureFlightShape(f);
@@ -4108,6 +4145,32 @@ function recomputeHoursBAndOffsetForMonth(month){
   month.flights.forEach(f => {
     ensureFlightShape(f);
     if (f.parts.offset) f.parts.offset.calc = calculateOffsetCalc(f);
+  });
+}
+function recomputeStayAccelForMonth(month){
+  month.flights = sortFlightsChronologically(month.flights);
+  const threshold = toMinutes(EXCEL_STAY_ACCEL_THRESHOLD);
+  let cumulativeStayMinutes = 0;
+  month.flights.forEach(f => {
+    ensureFlightShape(f);
+    const baseStayPayMinutes = toMinutes(f.parts?.stay?.calc || '00:00');
+    const stayDurationMinutes = toMinutes(getFlightStayDurationDisplay(month, f.id));
+    let stayAccelMinutes = 0;
+    if (isStayAccelEligible(month, f) && stayDurationMinutes > 0 && baseStayPayMinutes > 0) {
+      const beforeExcess = Math.max(0, cumulativeStayMinutes - threshold);
+      cumulativeStayMinutes += stayDurationMinutes;
+      f.cumulativeStayAccelHours = toHHMM(cumulativeStayMinutes);
+      const afterExcess = Math.max(0, cumulativeStayMinutes - threshold);
+      const overflowMinutes = Math.max(0, afterExcess - beforeExcess);
+      if (overflowMinutes > 0) {
+        const ratio = Math.min(1, overflowMinutes / stayDurationMinutes);
+        stayAccelMinutes = Math.round(baseStayPayMinutes * ratio * 0.25);
+      }
+    } else {
+      f.cumulativeStayAccelHours = toHHMM(cumulativeStayMinutes);
+    }
+    f.stayAccelPay = toHHMM(stayAccelMinutes);
+    if (f.parts?.stay) f.parts.stay.calc = toHHMM(baseStayPayMinutes + stayAccelMinutes);
   });
 }
 function totalByPart(month,key){
@@ -4230,6 +4293,7 @@ function recalcMonthFromFlightChange(month){
     prevStandbyL = standbyL;
   });
   recomputeHoursBAndOffsetForMonth(month);
+  recomputeStayAccelForMonth(month);
   refreshMonthMeta(month);
   recomputeMonthComp(month);
 }
@@ -4568,6 +4632,11 @@ function renderEditablePart(monthName, flightId, key, part){
   const isStayRoute = isStay && normalizeRouteKey(flight?.route) === 'stay';
   const isActivityRoute = isStay && flight && routeUsesActivityPay(flight.route) && !isStayRoute;
   const isComputedStayRoute = isStay && flight && routeUsesFlightFix(flight.route) && !isStayRoute && !isActivityRoute && isComputedStayPaymentCarrier(month, flight.id) && toMinutes(getFlightStayDurationDisplay(month, flightId)) >= toMinutes(EXCEL_MIN_STAY_FOR_HELPER);
+  const stayAccelMarkup = toMinutes(flight?.stayAccelPay || '00:00') > 0 ? `
+                <div class="stay-accel-note">
+                  <span>מאיץ שהייה</span>
+                  <span>${escapeHtml(String(flight?.stayAccelPay || '00:00'))}</span>
+                </div>` : '';
   const shouldUseTimePickerInput = part?.type === 'duration' || part?.type === 'time';
   const editInputMarkup = `<input data-edit="${draftKey(flightId,key)}" class="edit-input ${invalid?'invalid':''}" ${shouldUseTimePickerInput ? `type="time" step="60" inputmode="numeric" onclick="this.showPicker?.()" onfocus="this.showPicker?.()"` : `type="text"`} value="${escapeHtml(normalizedCurrentValue)}" oninput="updateDraft('${flightId}','${key}',this.value)">`;
   const stayDualLayout = isStayRoute ? `
@@ -4582,6 +4651,7 @@ function renderEditablePart(monthName, flightId, key, part){
                   ${editInputMarkup}
                   <button class="mini-btn save" type="button" onclick="saveEdit('${monthName}','${flightId}','${key}')">שמור</button>
                 </div>
+                ${stayAccelMarkup}
               </div>
             </div>` : (isActivityRoute ? `
             <div class="stay-two-col">
@@ -4608,6 +4678,7 @@ function renderEditablePart(monthName, flightId, key, part){
                   ${editInputMarkup}
                   <button class="mini-btn save" type="button" onclick="saveEdit('${monthName}','${flightId}','${key}')">שמור</button>
                 </div>
+                ${stayAccelMarkup}
               </div>
             </div>` : ''));
   const shabbatToggle = isShabbat ? `
