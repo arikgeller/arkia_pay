@@ -1988,7 +1988,7 @@ color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto
       <div id="masterDataMount"></div>
     </div>
   </div>
-  <div class="app-version-footer">גרסה 181.270</div>
+  <div class="app-version-footer">גרסה 181.274</div>
 </div>
 
 <datalist id="routeOptionsList">
@@ -2442,12 +2442,6 @@ function ensureMonthForDate(inputDateValue){
   model.months.push(month);
   model.months.sort((a,b) => monthSortKey(b.monthName) - monthSortKey(a.monthName));
   return model.months.find(m => m.monthName === monthName) || month;
-}
-function getNextChronologicalMonth(currentMonth){
-  const currentKey = monthSortKey(currentMonth?.monthName || '');
-  return [...model.months]
-    .filter(month => monthSortKey(month?.monthName || '') > currentKey)
-    .sort((a,b) => monthSortKey(a.monthName) - monthSortKey(b.monthName))[0] || null;
 }
 function displayChangeCode(v){ const s=String(v??'').trim(); return (s==='4' || s==='6') ? s : ''; }
 const ORDERED_FLIGHTS_START_MONTH_KEY = 202604;
@@ -3652,11 +3646,8 @@ function findEtmStayAdjacentFlights(month, stayFlight){
   if (!stayDateValue) return { prevFlight: null, nextFlight: null };
   const stayDayStart = new Date(`${stayDateValue}T00:00:00`);
   const stayDayEnd = new Date(stayDayStart.getTime() + (24 * 60 * 60 * 1000));
-  const nextMonth = getNextChronologicalMonth(month);
-  const candidateMonths = [month, nextMonth].filter(Boolean);
-  const candidates = candidateMonths
-    .flatMap(sourceMonth => (Array.isArray(sourceMonth?.flights) ? sourceMonth.flights : [])
-      .map(flight => ({ flight, month: sourceMonth, bounds: getFlightTimelineBounds(sourceMonth?.monthName || '', flight) })))
+  const candidates = (Array.isArray(month?.flights) ? month.flights : [])
+    .map(flight => ({ flight, bounds: getFlightTimelineBounds(month?.monthName || '', flight) }))
     .filter(item => item.bounds.startDateTime && item.bounds.endDateTime && !routeIsStay(item.flight?.route));
   let prevCandidate = null;
   let nextCandidate = null;
@@ -3672,14 +3663,11 @@ function findEtmStayAdjacentFlights(month, stayFlight){
   if (prevCandidate.bounds.endDateTime > nextCandidate.bounds.startDateTime) return { prevFlight: null, nextFlight: null };
   return { prevFlight: prevCandidate.flight, nextFlight: nextCandidate.flight };
 }
-function getStayCrossMonthEntries(month){
-  const months = [month, getNextChronologicalMonth(month)].filter(Boolean)
-    .sort((a,b) => monthSortKey(a.monthName) - monthSortKey(b.monthName));
-  return months.flatMap(sourceMonth => getFlightsInLogicalSequence(sourceMonth).map(flight => ({ flight, month: sourceMonth })));
-}
-function buildFlightActivityGroupsFromEntries(entries){
-  const actualFlights = entries
-    .map((entry, index) => ({ ...entry, index, bounds: getFlightTimelineBounds(entry.month?.monthName || '', entry.flight) }))
+function buildFlightActivityGroups(month){
+  const logicalFlights = getFlightsInLogicalSequence(month);
+  const monthName = month?.monthName || '';
+  const actualFlights = logicalFlights
+    .map((flight, index) => ({ flight, index, bounds: getFlightTimelineBounds(monthName, flight) }))
     .filter(item => routeUsesFlightFix(item.flight.route) && item.bounds.startDateTime && item.bounds.endDateTime);
   const groups = [];
   let currentGroup = null;
@@ -3708,7 +3696,7 @@ function buildFlightActivityGroupsFromEntries(entries){
     const firstIndex = Number(firstItem?.index ?? -1);
     const lastIndex = Number(lastItem?.index ?? -1);
     const hasExplicitStay = firstIndex >= 0 && lastIndex >= firstIndex
-      ? entries.slice(firstIndex, lastIndex + 1).some(entry => routeIsStay(entry?.flight?.route))
+      ? logicalFlights.slice(firstIndex, lastIndex + 1).some(flight => routeIsStay(flight?.route))
       : false;
     return {
       items: group.items,
@@ -3721,16 +3709,12 @@ function buildFlightActivityGroupsFromEntries(entries){
     };
   });
 }
-function buildFlightActivityGroups(month){
-  const entries = getFlightsInLogicalSequence(month).map(flight => ({ flight, month }));
-  return buildFlightActivityGroupsFromEntries(entries);
-}
 function findStayActivityGroupForFlight(month, stayFlightId){
-  const entries = getStayCrossMonthEntries(month);
-  const stayIndex = entries.findIndex(entry => String(entry.flight.id) === String(stayFlightId));
+  const logicalFlights = getFlightsInLogicalSequence(month);
+  const stayIndex = logicalFlights.findIndex(flight => String(flight.id) === String(stayFlightId));
   if (stayIndex < 0) return null;
   let matchedGroup = null;
-  buildFlightActivityGroupsFromEntries(entries).forEach(group => {
+  buildFlightActivityGroups(month).forEach(group => {
     if (group.items.some(item => item.index < stayIndex)) matchedGroup = group;
   });
   return matchedGroup;
@@ -4181,7 +4165,12 @@ function totalByPart(month,key){
     return acc + toMinutes(finalValue(p));
   }, 0);
 }
-function totalBlock(month){ return toHHMM(month.flights.reduce((acc,f)=> acc + toMinutes(f.block||'00:00'),0)); }
+function totalBlock(month){
+  return toHHMM(month.flights.reduce((acc,f)=> {
+    if (containsDhNote(f?.note)) return acc;
+    return acc + toMinutes(f?.block || '00:00');
+  },0));
+}
 function flightPayable(f){
   const total = ['fix','stay','shabbat','hoursB','daysB','changePay','extras'].reduce((acc,key)=> acc+toMinutes(finalValue(f.parts[key])),0)
     - toMinutes(finalValue(f.parts.offset));
@@ -5043,12 +5032,14 @@ function buildPayrollLogbookBaseRows(){
   const rows = [];
   model.months.forEach(month => {
     (month.flights || []).forEach(flight => {
+      ensureFlightShape(flight);
       const isoDate = dateToInputValue(flight.date, month.monthName) || '';
       if (!isPayrollLogbookRowInActiveRange(isoDate)) return;
       if (!flightDatePassedForLogbook(flight, month.monthName)) return;
       if (!isLogbookEligibleRoute(flight.route)) return;
       if (containsDhNote(flight.note)) return;
       const meta = routeMetaForLogbook(flight.route);
+      const liveBlock = toHHMM(getEffectiveBlockMinutes(flight));
       rows.push({
         key: `payroll-${flight.id}`,
         source: 'payroll',
@@ -5061,11 +5052,11 @@ function buildPayrollLogbookBaseRows(){
         dep: meta.dep || '',
         mid: meta.mid || '',
         arr: meta.arr || '',
-        block: flight.block || '00:00',
+        block: liveBlock || '00:00',
         takeoffs: String(flight.takeoffs || '').trim(),
         landings: String(flight.landings || '').trim(),
         rem: String(flight.crewContact || '').trim(),
-        pic: flight.block || '00:00',
+        pic: liveBlock || '00:00',
         monthName: month.monthName,
         sequenceNumber: getFlightSequenceNumber(flight, 0),
         departureTime: getFlightDepartureTimeForLogic(flight)
