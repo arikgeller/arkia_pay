@@ -1988,7 +1988,7 @@ color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto
       <div id="masterDataMount"></div>
     </div>
   </div>
-  <div class="app-version-footer">גרסה 181.274</div>
+  <div class="app-version-footer">גרסה 181.275</div>
 </div>
 
 <datalist id="routeOptionsList">
@@ -2230,6 +2230,10 @@ const DEFAULT_MINIMUM_EMPLOYMENT_ILS = 55785;
 const DEFAULT_HOURLY_RATE = 0;
 const COMPENSATION_HISTORY_BASE_MONTH_KEY = 190001;
 const MASTERDATA_SETTINGS_STORAGE_PREFIX = 'arkia-masterdata-settings:';
+const FULL_SNAPSHOT_STORAGE_PREFIX = 'arkia-full-snapshot:';
+const FULL_SNAPSHOT_DB_NAME = 'arkia-local-backup';
+const FULL_SNAPSHOT_DB_VERSION = 1;
+const FULL_SNAPSHOT_STORE_NAME = 'snapshots';
 function normalizeCompensationHistory(rows, fallbackMinimumEmploymentIls, fallbackHourlyRate){
   const normalized = Array.isArray(rows) ? rows.map(row => ({
     effectiveMonthKey: Number(row?.effectiveMonthKey || 0),
@@ -2280,6 +2284,126 @@ function getMasterDataSettingsStorageKey(appId){
 }
 function getMasterDataSnapshotStorageKey(appId){
   return `${MASTERDATA_SETTINGS_STORAGE_PREFIX}${String(appId || CLOUD_APP_ID || 'arkia-pay-main')}:snapshot`;
+}
+function getFullSnapshotStorageKey(appId){
+  return `${FULL_SNAPSHOT_STORAGE_PREFIX}${String(appId || CLOUD_APP_ID || 'arkia-pay-main')}`;
+}
+function normalizePersistedFullSnapshot(snapshot){
+  if (!snapshot || typeof snapshot !== 'object') return null;
+  const payload = snapshot.payload;
+  if (!payload || !Array.isArray(payload.months)) return null;
+  return {
+    appId: String(snapshot.appId || '').trim(),
+    savedAt: String(snapshot.savedAt || '').trim(),
+    pendingCloudSync: !!snapshot.pendingCloudSync,
+    payload
+  };
+}
+function readPersistedFullSnapshotFromLocalStorage(appId){
+  try {
+    const raw = localStorage.getItem(getFullSnapshotStorageKey(appId));
+    if (!raw) return null;
+    return normalizePersistedFullSnapshot(JSON.parse(raw));
+  } catch (err) {
+    console.warn('Failed reading local full snapshot from localStorage', err);
+    return null;
+  }
+}
+function persistPersistedFullSnapshotToLocalStorage(appId, snapshot){
+  try {
+    localStorage.setItem(getFullSnapshotStorageKey(appId), JSON.stringify({
+      appId: String(appId || CLOUD_APP_ID || 'arkia-pay-main'),
+      savedAt: String(snapshot?.savedAt || new Date().toISOString()).trim(),
+      pendingCloudSync: !!snapshot?.pendingCloudSync,
+      payload: snapshot?.payload || serializeModel()
+    }));
+  } catch (err) {
+    console.warn('Failed persisting local full snapshot to localStorage', err);
+  }
+}
+function openFullSnapshotDb(){
+  if (!window.indexedDB) return Promise.resolve(null);
+  if (openFullSnapshotDb._promise) return openFullSnapshotDb._promise;
+  openFullSnapshotDb._promise = new Promise(resolve => {
+    try {
+      const request = window.indexedDB.open(FULL_SNAPSHOT_DB_NAME, FULL_SNAPSHOT_DB_VERSION);
+      request.onupgradeneeded = event => {
+        const db = event.target.result;
+        if (!db.objectStoreNames.contains(FULL_SNAPSHOT_STORE_NAME)) {
+          db.createObjectStore(FULL_SNAPSHOT_STORE_NAME, { keyPath: 'appId' });
+        }
+      };
+      request.onsuccess = () => resolve(request.result || null);
+      request.onerror = () => {
+        console.warn('Failed opening IndexedDB local backup store', request.error);
+        resolve(null);
+      };
+      request.onblocked = () => resolve(null);
+    } catch (err) {
+      console.warn('IndexedDB open threw an error', err);
+      resolve(null);
+    }
+  });
+  return openFullSnapshotDb._promise;
+}
+async function readPersistedFullSnapshot(appId){
+  const normalizedAppId = String(appId || CLOUD_APP_ID || 'arkia-pay-main');
+  try {
+    const db = await openFullSnapshotDb();
+    if (db) {
+      const snapshot = await new Promise(resolve => {
+        try {
+          const tx = db.transaction(FULL_SNAPSHOT_STORE_NAME, 'readonly');
+          const store = tx.objectStore(FULL_SNAPSHOT_STORE_NAME);
+          const request = store.get(normalizedAppId);
+          request.onsuccess = () => resolve(normalizePersistedFullSnapshot(request.result));
+          request.onerror = () => {
+            console.warn('Failed reading local full snapshot from IndexedDB', request.error);
+            resolve(null);
+          };
+        } catch (err) {
+          console.warn('IndexedDB read transaction failed', err);
+          resolve(null);
+        }
+      });
+      if (snapshot) return snapshot;
+    }
+  } catch (err) {
+    console.warn('IndexedDB full snapshot read failed', err);
+  }
+  return readPersistedFullSnapshotFromLocalStorage(normalizedAppId);
+}
+async function persistFullSnapshotLocally(appId, savedAt, pendingCloudSync, payload){
+  const normalizedAppId = String(appId || CLOUD_APP_ID || 'arkia-pay-main');
+  const snapshot = {
+    appId: normalizedAppId,
+    savedAt: String(savedAt || new Date().toISOString()).trim(),
+    pendingCloudSync: !!pendingCloudSync,
+    payload: payload || serializeModel()
+  };
+  persistPersistedFullSnapshotToLocalStorage(normalizedAppId, snapshot);
+  try {
+    const db = await openFullSnapshotDb();
+    if (!db) return false;
+    return await new Promise(resolve => {
+      try {
+        const tx = db.transaction(FULL_SNAPSHOT_STORE_NAME, 'readwrite');
+        const store = tx.objectStore(FULL_SNAPSHOT_STORE_NAME);
+        const request = store.put(snapshot);
+        request.onsuccess = () => resolve(true);
+        request.onerror = () => {
+          console.warn('Failed writing local full snapshot to IndexedDB', request.error);
+          resolve(false);
+        };
+      } catch (err) {
+        console.warn('IndexedDB write transaction failed', err);
+        resolve(false);
+      }
+    });
+  } catch (err) {
+    console.warn('Persisting full snapshot locally failed', err);
+    return false;
+  }
 }
 function readPersistedMasterDataSettings(appId){
   try {
@@ -2360,6 +2484,14 @@ function applyPersistedMasterDataSnapshot(appId){
     ...persisted.masterData
   });
   return true;
+}
+function applyPersistedFullSnapshot(snapshot){
+  const normalized = normalizePersistedFullSnapshot(snapshot);
+  if (!normalized) return false;
+  return mergeCloudModel(normalized.payload, normalized.savedAt, {
+    pendingCloudSync: normalized.pendingCloudSync,
+    skipLocalPersist: false
+  });
 }
 
 function makeEmptyParts(){
@@ -6954,7 +7086,8 @@ const cloud = {
   loading: false,
   saving: false,
   queued: false,
-  loadedAtLeastOnce: false
+  loadedAtLeastOnce: false,
+  retryTimer: null
 };
 
 function initCloudClient(){
@@ -6973,7 +7106,32 @@ function serializeModel(){
   payload.logbookDeleted = deepClone(ui.logbookDeleted || {});
   return payload;
 }
-function mergeCloudModel(payload, cloudUpdatedAt){
+function queuePersistFullSnapshotLocally(appId, savedAt, pendingCloudSync, payload){
+  persistFullSnapshotLocally(appId, savedAt, pendingCloudSync, payload).catch(err => {
+    console.warn('Full local snapshot persistence failed', err);
+  });
+}
+function scheduleLocalFullSnapshotSave(pendingCloudSync = true){
+  clearTimeout(scheduleLocalFullSnapshotSave._t);
+  scheduleLocalFullSnapshotSave._t = setTimeout(() => {
+    const savedAt = new Date().toISOString();
+    persistMasterDataSettingsLocally(CLOUD_APP_ID);
+    persistMasterDataSnapshotLocally(CLOUD_APP_ID, savedAt, pendingCloudSync);
+    queuePersistFullSnapshotLocally(CLOUD_APP_ID, savedAt, pendingCloudSync);
+  }, 120);
+}
+function scheduleCloudRetry(delayMs = 30000){
+  if (!cloud.booted) return;
+  clearTimeout(cloud.retryTimer);
+  cloud.retryTimer = setTimeout(() => {
+    saveToCloud();
+  }, Math.max(5000, Number(delayMs) || 30000));
+}
+function clearCloudRetry(){
+  clearTimeout(cloud.retryTimer);
+  cloud.retryTimer = null;
+}
+function mergeCloudModel(payload, cloudUpdatedAt, options = {}){
   if (!payload || !Array.isArray(payload.months)) return false;
   model.months = payload.months;
   const mergedMasterData = ensureMasterDataShape(payload.masterData || {
@@ -6991,20 +7149,25 @@ function mergeCloudModel(payload, cloudUpdatedAt){
     recalcMonthFromFlightChange(month);
   });
   updateRouteOptionsList();
+  if (!options.skipLocalPersist) {
+    queuePersistFullSnapshotLocally(CLOUD_APP_ID, cloudUpdatedAt, !!options.pendingCloudSync, serializeModel());
+  }
   return true;
 }
 async function loadFromCloud(){
   applyPersistedMasterDataSettings(CLOUD_APP_ID);
+  const localFullSnapshot = await readPersistedFullSnapshot(CLOUD_APP_ID);
+  const localFullSnapshotApplied = localFullSnapshot ? applyPersistedFullSnapshot(localFullSnapshot) : false;
   const localSnapshot = readPersistedMasterDataSnapshot(CLOUD_APP_ID);
-  const localSnapshotApplied = applyPersistedMasterDataSnapshot(CLOUD_APP_ID);
+  const localSnapshotApplied = localFullSnapshotApplied ? false : applyPersistedMasterDataSnapshot(CLOUD_APP_ID);
   const client = initCloudClient();
   if (!client) {
-    if (localSnapshotApplied) render();
-    return localSnapshotApplied;
+    if (localFullSnapshotApplied || localSnapshotApplied) render();
+    return localFullSnapshotApplied || localSnapshotApplied;
   }
   cloud.loading = true;
   let result = false;
-  let shouldSyncLocalMasterDataToCloud = false;
+  let shouldSyncLocalToCloud = false;
   try {
     const { data, error } = await client
       .from('app_state')
@@ -7013,31 +7176,34 @@ async function loadFromCloud(){
       .maybeSingle();
     if (error) {
       console.warn('Cloud load failed', error);
-      if (localSnapshotApplied) {
+      if (localFullSnapshotApplied || localSnapshotApplied) {
         render();
         result = true;
       }
     } else if (data && data.payload) {
       const cloudUpdatedAt = String(data.updated_at || '').trim();
-      const localSavedAt = String(localSnapshot?.savedAt || '').trim();
-      const preferLocalMasterData = !!(localSnapshot?.pendingCloudSync && localSnapshot?.masterData && localSavedAt && cloudUpdatedAt && localSavedAt > cloudUpdatedAt);
-      const mergedPayload = preferLocalMasterData
-        ? { ...data.payload, masterData: localSnapshot.masterData }
-        : data.payload;
-      mergeCloudModel(mergedPayload, preferLocalMasterData ? localSavedAt : cloudUpdatedAt);
-      shouldSyncLocalMasterDataToCloud = preferLocalMasterData;
+      const localSavedAt = String(localFullSnapshot?.savedAt || localSnapshot?.savedAt || '').trim();
+      const preferLocalFullSnapshot = !!(localFullSnapshot?.pendingCloudSync && localSavedAt && cloudUpdatedAt && localSavedAt > cloudUpdatedAt);
+      const preferLocalMasterData = !!(!preferLocalFullSnapshot && localSnapshot?.pendingCloudSync && localSnapshot?.masterData && localSavedAt && cloudUpdatedAt && localSavedAt > cloudUpdatedAt);
+      const mergedPayload = preferLocalFullSnapshot
+        ? localFullSnapshot.payload
+        : (preferLocalMasterData ? { ...data.payload, masterData: localSnapshot.masterData } : data.payload);
+      mergeCloudModel(mergedPayload, preferLocalFullSnapshot ? localSavedAt : (preferLocalMasterData ? localSavedAt : cloudUpdatedAt), {
+        pendingCloudSync: preferLocalFullSnapshot || preferLocalMasterData
+      });
+      shouldSyncLocalToCloud = preferLocalFullSnapshot || preferLocalMasterData;
       cloud.loadedAtLeastOnce = true;
       render();
       result = true;
-    } else if (localSnapshotApplied || applyPersistedMasterDataSnapshot(CLOUD_APP_ID)) {
-      shouldSyncLocalMasterDataToCloud = !!localSnapshot?.pendingCloudSync;
+    } else if (localFullSnapshotApplied || localSnapshotApplied || applyPersistedMasterDataSnapshot(CLOUD_APP_ID)) {
+      shouldSyncLocalToCloud = !!(localFullSnapshot?.pendingCloudSync || localSnapshot?.pendingCloudSync);
       render();
       result = true;
     }
   } finally {
     cloud.loading = false;
   }
-  if (shouldSyncLocalMasterDataToCloud) await saveToCloud();
+  if (shouldSyncLocalToCloud) await saveToCloud();
   return result;
 }
 async function saveToCloud(){
@@ -7053,11 +7219,18 @@ async function saveToCloud(){
     persistMasterDataSettingsLocally(CLOUD_APP_ID);
     persistMasterDataSnapshotLocally(CLOUD_APP_ID, savedAt, true);
     const payload = serializeModel();
+    await persistFullSnapshotLocally(CLOUD_APP_ID, savedAt, true, payload);
     const { error } = await client
       .from('app_state')
       .upsert({ app_id: CLOUD_APP_ID, payload, updated_at: savedAt }, { onConflict: 'app_id' });
-    if (error) console.warn('Cloud save failed', error);
-    else persistMasterDataSnapshotLocally(CLOUD_APP_ID, savedAt, false);
+    if (error) {
+      console.warn('Cloud save failed', error);
+      scheduleCloudRetry();
+    } else {
+      clearCloudRetry();
+      persistMasterDataSnapshotLocally(CLOUD_APP_ID, savedAt, false);
+      await persistFullSnapshotLocally(CLOUD_APP_ID, savedAt, false, payload);
+    }
   } finally {
     cloud.saving = false;
     if (cloud.queued) {
@@ -7068,6 +7241,7 @@ async function saveToCloud(){
 }
 function scheduleCloudSave(){
   if (!cloud.booted) return;
+  scheduleLocalFullSnapshotSave(true);
   clearTimeout(scheduleCloudSave._t);
   scheduleCloudSave._t = setTimeout(saveToCloud, 400);
 }
@@ -7077,6 +7251,10 @@ async function bootCloud(){
   await loadFromCloud();
   if (!cloud.loadedAtLeastOnce) await saveToCloud();
 }
+window.addEventListener('online', () => {
+  if (!cloud.booted) return;
+  saveToCloud();
+});
 
 const _origCreateMonthCloud = createMonth;
 createMonth = function(){
