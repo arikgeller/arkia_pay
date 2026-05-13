@@ -1988,7 +1988,7 @@ color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto
       <div id="masterDataMount"></div>
     </div>
   </div>
-  <div class="app-version-footer">גרסה 181.275</div>
+  <div class="app-version-footer">גרסה 181.280</div>
 </div>
 
 <datalist id="routeOptionsList">
@@ -4560,7 +4560,7 @@ function renderTechTimeField(label, inputId, value, monthName, flightId){
   const safeValue = String(value || '');
   return `<div class="field time-pair">
           <div class="label">${label}</div>
-          <input id="${inputId}" class="input" type="time" step="60" inputmode="numeric" value="${escapeHtml(safeValue)}" oninput="syncFlightBlockFromTechInputs('${escapeJs(monthName)}','${flightId}')" onchange="syncFlightBlockFromTechInputs('${escapeJs(monthName)}','${flightId}')" onblur="syncFlightBlockFromTechInputs('${escapeJs(monthName)}','${flightId}')">
+          <input id="${inputId}" class="input" type="time" step="60" inputmode="numeric" value="${escapeHtml(safeValue)}">
         </div>`;
 }
 function createFlight(){
