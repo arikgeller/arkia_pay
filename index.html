@@ -1988,7 +1988,7 @@ color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto
       <div id="masterDataMount"></div>
     </div>
   </div>
-  <div class="app-version-footer">גרסה 181.280</div>
+  <div class="app-version-footer">גרסה 181.281</div>
 </div>
 
 <datalist id="routeOptionsList">
@@ -7337,9 +7337,20 @@ async function submitLogin(){
   await bootCloud();
 }
 window.submitLogin = submitLogin;
+async function registerOfflineShell(){
+  try {
+    if (!('serviceWorker' in navigator)) return;
+    if (!window.isSecureContext) return;
+    if (!/^https?:$/i.test(window.location.protocol)) return;
+    await navigator.serviceWorker.register('service-worker.js');
+  } catch (err) {
+    console.warn('Offline shell registration failed', err);
+  }
+}
 window.addEventListener('DOMContentLoaded', () => {
   const input = document.getElementById('loginUsername');
   if (input) input.focus();
+  registerOfflineShell();
 });
 
 function triggerHilanImport(){
