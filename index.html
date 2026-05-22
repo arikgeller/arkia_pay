@@ -3,6 +3,8 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="theme-color" content="#1b7fc7" />
+<link rel="manifest" href="manifest.webmanifest" />
 <title>Arkia v176</title>
 <style>
 :root{--bg:#e9f0f8;--card:#ffffff;--line:#d2deec;--text:#102033;--muted:#60758d;--soft:#eef5fb;--accent-soft:#e6f0fb;--manual:#e8edf3;--danger:#b91c1c;--ok:#065f46;--brand:#1b7fc7;--brand-strong:#0d3558;--brand-soft:#d7ebff;--brand-glow:rgba(27,127,199,.18);--hero:#f7fbff;--hero-2:#dcecff;--highlight:#ffca5c;}
@@ -1988,7 +1990,7 @@ color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto
       <div id="masterDataMount"></div>
     </div>
   </div>
-  <div class="app-version-footer">גרסה 181.281</div>
+  <div class="app-version-footer">גרסה 181.283</div>
 </div>
 
 <datalist id="routeOptionsList">
@@ -3597,6 +3599,34 @@ function addDaysToIsoDate(isoDate, days){
   dt.setDate(dt.getDate() + Number(days || 0));
   return `${dt.getFullYear()}-${pad2(dt.getMonth() + 1)}-${pad2(dt.getDate())}`;
 }
+function getFlightOverlapRangeForActivityDate(monthName, flight, dateKey){
+  const range = getFlightDateTimeRange(flight, monthName);
+  if (!range || !dateKey) return null;
+  const dayStart = new Date(`${dateKey}T00:00:00`);
+  if (Number.isNaN(dayStart.getTime())) return null;
+  const dayEnd = new Date(dayStart.getTime());
+  dayEnd.setDate(dayEnd.getDate() + 1);
+  const start = new Date(Math.max(range.start.getTime(), dayStart.getTime()));
+  const end = new Date(Math.min(range.end.getTime(), dayEnd.getTime()));
+  if (end.getTime() <= start.getTime()) return null;
+  return { start, end };
+}
+function shouldAwardSeparateActivityDayForDate(coverageMap, monthName, flight, dateKey){
+  const overlap = getFlightOverlapRangeForActivityDate(monthName, flight, dateKey);
+  if (!overlap) return false;
+  const lastCoveredUntil = coverageMap.get(dateKey);
+  if (!(lastCoveredUntil instanceof Date)) return true;
+  const gapMinutes = Math.round((overlap.start.getTime() - lastCoveredUntil.getTime()) / 60000);
+  return gapMinutes > (10 * 60);
+}
+function updateActivityDateCoverage(coverageMap, monthName, flight, dateKey){
+  const overlap = getFlightOverlapRangeForActivityDate(monthName, flight, dateKey);
+  if (!overlap) return;
+  const lastCoveredUntil = coverageMap.get(dateKey);
+  if (!(lastCoveredUntil instanceof Date) || overlap.end.getTime() > lastCoveredUntil.getTime()) {
+    coverageMap.set(dateKey, overlap.end);
+  }
+}
 function buildActivityDayIncrementMap(month){
   const flights = getFlightsInLogicalSequence(month);
   const dayStats = new Map();
@@ -3631,6 +3661,7 @@ function buildActivityDayIncrementMap(month){
   });
 
   const awardedDates = new Set();
+  const awardedDateCoverage = new Map();
   const increments = new Map();
   flights.forEach(flight => {
     ensureFlightShape(flight);
@@ -3650,6 +3681,7 @@ function buildActivityDayIncrementMap(month){
       if (!hasNonStayOnSameDay && !awardedDates.has(dateKey)) {
         increment = 1;
         awardedDates.add(dateKey);
+        updateActivityDateCoverage(awardedDateCoverage, month?.monthName, flight, dateKey);
       }
       increments.set(String(flight.id), increment);
       return;
@@ -3659,29 +3691,39 @@ function buildActivityDayIncrementMap(month){
       if (!standbyStats.hasFlightRoute && standbyEligible && !awardedDates.has(dateKey)) {
         increment += 1;
         awardedDates.add(dateKey);
+        updateActivityDateCoverage(awardedDateCoverage, month?.monthName, flight, dateKey);
       }
       if (!standbyStats.hasFlightRoute && standbyEligible && flightCreatesNextActivityDay(flight)) {
         const nextDateKey = addDaysToIsoDate(dateKey, 1);
         if (nextDateKey && !awardedDates.has(nextDateKey)) {
           increment += 1;
           awardedDates.add(nextDateKey);
+          updateActivityDateCoverage(awardedDateCoverage, month?.monthName, flight, nextDateKey);
         }
       }
       increments.set(String(flight.id), increment);
       return;
     }
 
-    if (!awardedDates.has(dateKey)) {
+    const shouldAwardCurrentDate = !awardedDates.has(dateKey)
+      || shouldAwardSeparateActivityDayForDate(awardedDateCoverage, month?.monthName, flight, dateKey);
+    if (shouldAwardCurrentDate) {
       increment += 1;
       awardedDates.add(dateKey);
     }
+    updateActivityDateCoverage(awardedDateCoverage, month?.monthName, flight, dateKey);
 
     if (flightCreatesNextActivityDay(flight)) {
       const nextDateKey = addDaysToIsoDate(dateKey, 1);
-      if (nextDateKey && !awardedDates.has(nextDateKey)) {
+      const shouldAwardNextDate = nextDateKey && (
+        !awardedDates.has(nextDateKey)
+        || shouldAwardSeparateActivityDayForDate(awardedDateCoverage, month?.monthName, flight, nextDateKey)
+      );
+      if (shouldAwardNextDate) {
         increment += 1;
         awardedDates.add(nextDateKey);
       }
+      if (nextDateKey) updateActivityDateCoverage(awardedDateCoverage, month?.monthName, flight, nextDateKey);
     }
 
     increments.set(String(flight.id), increment);
@@ -7337,12 +7379,28 @@ async function submitLogin(){
   await bootCloud();
 }
 window.submitLogin = submitLogin;
+async function cacheCurrentOfflineEntry(){
+  try {
+    if (!('serviceWorker' in navigator)) return;
+    const registration = await navigator.serviceWorker.ready;
+    const target = navigator.serviceWorker.controller || registration.active || registration.waiting;
+    target?.postMessage({
+      type: 'CACHE_CURRENT_URL',
+      url: window.location.href,
+      indexUrl: new URL('./index.html', window.location.href).href
+    });
+  } catch (err) {
+    console.warn('Offline shell hint failed', err);
+  }
+}
 async function registerOfflineShell(){
   try {
     if (!('serviceWorker' in navigator)) return;
     if (!window.isSecureContext) return;
     if (!/^https?:$/i.test(window.location.protocol)) return;
-    await navigator.serviceWorker.register('service-worker.js');
+    const serviceWorkerUrl = new URL('./service-worker.js', window.location.href);
+    await navigator.serviceWorker.register(serviceWorkerUrl.href, { scope: './' });
+    await cacheCurrentOfflineEntry();
   } catch (err) {
     console.warn('Offline shell registration failed', err);
   }
@@ -7351,6 +7409,9 @@ window.addEventListener('DOMContentLoaded', () => {
   const input = document.getElementById('loginUsername');
   if (input) input.focus();
   registerOfflineShell();
+});
+window.addEventListener('pageshow', () => {
+  cacheCurrentOfflineEntry();
 });
 
 function triggerHilanImport(){
