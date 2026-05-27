@@ -1990,7 +1990,7 @@ color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto
       <div id="masterDataMount"></div>
     </div>
   </div>
-  <div class="app-version-footer">גרסה 181.288</div>
+  <div class="app-version-footer">גרסה 181.290</div>
 </div>
 
 <datalist id="routeOptionsList">
@@ -3107,6 +3107,7 @@ const EXCEL_FRIDAY_START = '16:00';
 const EXCEL_OVERNIGHT_SPLIT = '02:00';
 const EXCEL_DAY_END = '24:00';
 const EXCEL_MIN_STAY_FOR_HELPER = '04:00';
+const EXCEL_STAY_MIN_FROM_MAY_2026 = '03:00';
 const EXCEL_HOURS_ACCEL_THRESHOLD = '80:00';
 const HOLIDAY_WINDOWS = [
   { name:'פסח א', start:'2026-04-01', end:'2026-04-02' },
@@ -3819,30 +3820,41 @@ function calculateActivityIncrement(f, prev, next, standbyL){
   if (currDate === prevDate && toMinutes(hhmmOrZero(h)) < toMinutes(EXCEL_OVERNIGHT_SPLIT)) return 0;
   return 1;
 }
-function calculateDaysBCalc(f, cumulativeDays, stayPayMinutes, standbyL){
-  const monthPart = Number(String(f.date||'').split('.')[1] || 0);
-  const accelMode = EXCEL_MONTH_ACCEL_MODE[monthPart];
-  if (!accelMode) return '00:00';
+function getMonthlyDutyThresholdForMonth(monthLike){
+  const monthName = typeof monthLike === 'string' ? monthLike : String(monthLike?.monthName || '').trim();
+  const monthIndex = HEBREW_MONTH_NAMES.findIndex(name => monthName.includes(name));
+  const monthPart = monthIndex >= 0 ? (monthIndex + 1) : 0;
+  if (!monthPart) return 0;
+  const monthKey = monthSortKey(monthName);
+  if (monthKey >= 202605) {
+    const configuredRow = getEffectiveMonthlyDutyRows().find(row => Number(row?.month) === monthPart);
+    const configuredDays = Number(configuredRow?.days);
+    if (Number.isFinite(configuredDays) && configuredDays > 0) return configuredDays;
+  }
+  return Number(EXCEL_MONTH_ACCEL_MODE[String(monthPart)] || 0);
+}
+function calculateDaysBCalc(monthName, f, cumulativeDays, stayPayMinutes, standbyL){
+  const threshold = getMonthlyDutyThresholdForMonth(monthName);
+  if (!threshold) return '00:00';
+  const firstAccelDayIsHalfFromMay2026 = monthSortKey(monthName) >= 202605;
   const curr = normalizeRouteKey(f.route);
   let result = 0;
   const fixMinutes = toMinutes(calculateFixCalc(f));
   if (curr === 'sic' || curr === 'mil' || cumulativeDays === null || cumulativeDays === undefined || cumulativeDays === '') return '00:00';
   if (curr === 'sby') {
-    if (standbyL > 3 && cumulativeDays > 17) result = Math.round(fixMinutes*0.5);
-    else if (standbyL > 3 && cumulativeDays > 16) result = Math.round(fixMinutes*0.25);
+    if (standbyL > 3 && cumulativeDays > threshold) {
+      result = Math.round(fixMinutes * (firstAccelDayIsHalfFromMay2026 ? 0.5 : (cumulativeDays > (threshold + 1) ? 0.5 : 0.25)));
+    }
     return result ? toHHMM(result) : '00:00';
   }
   if (curr === 'stay') {
-    if (cumulativeDays > 17) result = Math.round(stayPayMinutes*0.5);
-    else if (cumulativeDays > 16) result = Math.round(stayPayMinutes*0.25);
+    if (cumulativeDays > threshold) {
+      result = Math.round(stayPayMinutes * (firstAccelDayIsHalfFromMay2026 ? 0.5 : (cumulativeDays > (threshold + 1) ? 0.5 : 0.25)));
+    }
     return result ? toHHMM(result) : '00:00';
   }
-  if (accelMode === 16) {
-    if (cumulativeDays > 17) result = Math.round(fixMinutes*0.5);
-    else if (cumulativeDays > 16) result = Math.round(fixMinutes*0.25);
-  } else {
-    if (cumulativeDays > 18) result = Math.round(fixMinutes*0.5);
-    else if (cumulativeDays > 17) result = Math.round(fixMinutes*0.25);
+  if (cumulativeDays > threshold) {
+    result = Math.round(fixMinutes * (firstAccelDayIsHalfFromMay2026 ? 0.5 : (cumulativeDays > (threshold + 1) ? 0.5 : 0.25)));
   }
   return result ? toHHMM(result) : '00:00';
 }
@@ -3983,11 +3995,20 @@ function calculateStayDurationMinutes(month, f, prev, next){
     return getActivityGroupStayDurationMinutes(activityGroup);
   }
   const intra = calculateStayGapWithinFlight(f);
-  if (intra >= toMinutes(EXCEL_MIN_STAY_FOR_HELPER)) return intra;
+  if (intra >= getStayEligibilityThresholdMinutes(month?.monthName || '')) return intra;
   return 0;
 }
-function calculateStayPayFromDuration(minutes){
+function getStayEligibilityThresholdMinutes(monthName){
+  return monthSortKey(monthName) >= 202605
+    ? toMinutes(EXCEL_STAY_MIN_FROM_MAY_2026)
+    : toMinutes(EXCEL_MIN_STAY_FOR_HELPER);
+}
+function calculateStayPayFromDuration(monthName, minutes){
   if (!minutes) return '00:00';
+  if (monthSortKey(monthName) >= 202605) {
+    if (minutes < getStayEligibilityThresholdMinutes(monthName)) return '00:00';
+    return toHHMM(Math.max(0, Math.round(minutes / 8)));
+  }
   let best = '00:00';
   for (const [threshold, pay] of EXCEL_STAY_THRESHOLDS) {
     if (minutes >= toMinutes(threshold)) best = pay;
@@ -4026,17 +4047,18 @@ function isStayAccelEligible(month, flight){
 }
 function calculateActivityCalc(month, f, prev, next){
   const routeKey = normalizeRouteKey(f?.route);
+  const monthName = month?.monthName || '';
   if (!routeKey) return '00:00';
   if (routeIsStay(routeKey)) {
     const etmOverride = calculateEtmStayPayOverride(month, f);
     if (etmOverride) return etmOverride;
-    return calculateStayPayFromDuration(calculateStayDurationMinutes(month, f, prev, next));
+    return calculateStayPayFromDuration(monthName, calculateStayDurationMinutes(month, f, prev, next));
   }
   if (routeUsesActivityPay(routeKey)) return getConfiguredRouteDuration(routeKey);
   if (routeUsesFlightFix(routeKey)) {
     const stayMinutes = calculateStayDurationMinutes(month, f, prev, next);
-    if (stayMinutes >= toMinutes(EXCEL_MIN_STAY_FOR_HELPER) && isComputedStayPaymentCarrier(month, f.id)) {
-      return calculateStayPayFromDuration(stayMinutes);
+    if (stayMinutes >= getStayEligibilityThresholdMinutes(monthName) && isComputedStayPaymentCarrier(month, f.id)) {
+      return calculateStayPayFromDuration(monthName, stayMinutes);
     }
   }
   return '00:00';
@@ -4184,14 +4206,10 @@ function getHoursAccelEligibleFixProgressPercent(month){
   return Math.max(0, Math.min(100, (eligibleFixMinutes / threshold) * 100));
 }
 function getMonthAccelModeFromMonth(month){
-  const monthName = String(month?.monthName || '').trim();
-  const monthIndex = HEBREW_MONTH_NAMES.findIndex(name => monthName.includes(name));
-  const monthPart = monthIndex >= 0 ? String(monthIndex + 1) : '';
-  return Number(EXCEL_MONTH_ACCEL_MODE[monthPart] || 0);
+  return getMonthlyDutyThresholdForMonth(month);
 }
 function getDaysAccelThresholdForMonth(month){
-  const accelMode = getMonthAccelModeFromMonth(month);
-  return accelMode === 16 ? 16 : 17;
+  return getMonthAccelModeFromMonth(month);
 }
 function getDaysAccelProgressPercent(month){
   const threshold = Math.max(1, getDaysAccelThresholdForMonth(month));
@@ -4325,7 +4343,7 @@ function recalcSingleFlightAuto(f,ctx){
   if (routeIsStay(f.route) && calculateEtmStayPayOverride(ctx.month, f)) forceDerivedCalculatedValue(f.parts.stay, activityPay);
   else applyCalculatedValue(f.parts.stay, activityPay);
   applyCalculatedValue(f.parts.shabbat, calculateShabbatCalc(f, ctx.monthName));
-  applyCalculatedValue(f.parts.daysB, calculateDaysBCalc(f, ctx.cumulativeDays, toMinutes(activityPay), ctx.standbyL));
+  applyCalculatedValue(f.parts.daysB, calculateDaysBCalc(ctx.monthName, f, ctx.cumulativeDays, toMinutes(activityPay), ctx.standbyL));
   applyCalculatedValue(f.parts.changePay, calculateChangePayCalc(f));
   applyCalculatedValue(f.parts.extras, '00:00');
 }
@@ -4866,7 +4884,7 @@ function renderEditablePart(monthName, flightId, key, part){
   const isStay = key === 'stay';
   const isStayRoute = isStay && normalizeRouteKey(flight?.route) === 'stay';
   const isActivityRoute = isStay && flight && routeUsesActivityPay(flight.route) && !isStayRoute;
-  const isComputedStayRoute = isStay && flight && routeUsesFlightFix(flight.route) && !isStayRoute && !isActivityRoute && isComputedStayPaymentCarrier(month, flight.id) && toMinutes(getFlightStayDurationDisplay(month, flightId)) >= toMinutes(EXCEL_MIN_STAY_FOR_HELPER);
+  const isComputedStayRoute = isStay && flight && routeUsesFlightFix(flight.route) && !isStayRoute && !isActivityRoute && isComputedStayPaymentCarrier(month, flight.id) && toMinutes(getFlightStayDurationDisplay(month, flightId)) >= getStayEligibilityThresholdMinutes(month?.monthName || '');
   const stayAccelMarkup = toMinutes(flight?.stayAccelPay || '00:00') > 0 ? `
                 <div class="stay-accel-note">
                   <span>מאיץ שהייה</span>
