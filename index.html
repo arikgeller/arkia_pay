@@ -1990,7 +1990,7 @@ color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto
       <div id="masterDataMount"></div>
     </div>
   </div>
-  <div class="app-version-footer">גרסה 181.283</div>
+  <div class="app-version-footer">גרסה 181.288</div>
 </div>
 
 <datalist id="routeOptionsList">
@@ -2498,7 +2498,7 @@ function applyPersistedFullSnapshot(snapshot){
 
 function makeEmptyParts(){
   return {
-    fix: { label: 'פיקס', calc: '00:00', manual: '', type: 'duration' },
+    fix: { label: 'פיקס', calc: '00:00', manual: '', type: 'duration', routeFrozen: false },
     stay: { label: 'פעילות', calc: '00:00', manual: '', type: 'duration' },
     shabbat: { label: 'שבת', calc: '00:00', manual: '', type: 'duration' },
     hoursB: { label: 'מאיץ שעות', calc: '00:00', manual: '', type: 'duration' },
@@ -2508,6 +2508,28 @@ function makeEmptyParts(){
     extras: { label: 'נוספות', calc: '00:00', manual: '', type: 'duration' },
     miluim: { label: 'מילואים', calc: '0', manual: '', type: 'number' }
   };
+}
+function normalizeFlightPartValue(key, part, defaultPart){
+  if (!part || typeof part !== 'object' || Array.isArray(part)) {
+    const rawValue = String(part ?? '').trim();
+    let calcValue = defaultPart.calc;
+    if (rawValue) {
+      calcValue = defaultPart.type === 'duration'
+        ? (normalizeDurationHHMM(rawValue) || rawValue)
+        : rawValue;
+    }
+    return { ...defaultPart, calc: calcValue, manual: '', routeFrozen: false };
+  }
+  const normalized = { ...defaultPart, ...part };
+  if (defaultPart.type === 'duration') {
+    normalized.calc = normalizeDurationHHMM(String(normalized.calc || '').trim()) || '00:00';
+    normalized.manual = normalized.manual === '' ? '' : (normalizeDurationHHMM(String(normalized.manual || '').trim()) || '');
+  } else {
+    normalized.calc = String(normalized.calc ?? defaultPart.calc).trim() || defaultPart.calc;
+    normalized.manual = normalized.manual === '' ? '' : (String(normalized.manual ?? '').trim() || '');
+  }
+  if (key === 'fix') normalized.routeFrozen = !!normalized.routeFrozen;
+  return normalized;
 }
 
 function makeFlight(id,row,date,route,dep1,arr1,dep2,arr2,aircraft,note){
@@ -2608,6 +2630,44 @@ function ensureAllCreationOrders(){
 function getNextMonthSequenceNumber(month){
   if (!month || !Array.isArray(month.flights) || !usesMonthlySequenceOrdering(month.monthName)) return 0;
   return month.flights.reduce((maxValue, flight, index) => Math.max(maxValue, getFlightSequenceNumber(flight, index)), 0) + 1;
+}
+function getMonthSequenceInsertionInfo(month, inputDateValue){
+  if (!month || !Array.isArray(month.flights) || !usesMonthlySequenceOrdering(month.monthName)) return null;
+  const normalizedDate = String(inputDateValue || '').trim();
+  if (!normalizedDate) return null;
+  const orderedFlights = month.flights
+    .map((flight, index) => ({
+      flight,
+      index,
+      sequenceNumber: getFlightSequenceNumber(flight, index),
+      dateValue: dateToInputValue(flight?.date, month.monthName)
+    }))
+    .filter(item => item.dateValue)
+    .sort((a, b) => {
+      if (a.sequenceNumber !== b.sequenceNumber) return a.sequenceNumber - b.sequenceNumber;
+      return a.index - b.index;
+    });
+  if (!orderedFlights.length) return null;
+  const firstLaterFlight = orderedFlights.find(item => item.dateValue > normalizedDate);
+  if (!firstLaterFlight) return null;
+  return {
+    targetSequenceNumber: firstLaterFlight.sequenceNumber,
+    shiftedFlights: orderedFlights.filter(item => item.sequenceNumber >= firstLaterFlight.sequenceNumber).map(item => item.flight)
+  };
+}
+function insertFlightIntoMonthSequence(month, flight, targetSequenceNumber){
+  if (!month || !flight || !usesMonthlySequenceOrdering(month.monthName)) return;
+  const target = Number(targetSequenceNumber);
+  if (!Number.isFinite(target) || target <= 0) {
+    flight.sequenceNumber = getNextMonthSequenceNumber(month);
+    return;
+  }
+  month.flights.forEach((existingFlight, index) => {
+    if (existingFlight === flight) return;
+    const currentSequence = getFlightSequenceNumber(existingFlight, index);
+    if (currentSequence >= target) existingFlight.sequenceNumber = currentSequence + 1;
+  });
+  flight.sequenceNumber = target;
 }
 function getSortedFlightsForMonth(month){
   const flights = Array.isArray(month?.flights) ? month.flights.slice() : [];
@@ -4212,9 +4272,10 @@ function renderMonthActivityBreakdown(month){
 function applyCalculatedValue(part, value){ if (part && !isManual(part)) part.calc = value; }
 function forceDerivedCalculatedValue(part, value){ if (!part) return; part.manual = ''; part.calc = value; }
 function ensureFlightShape(f){
-  f.parts ||= makeEmptyParts();
   const defaults = makeEmptyParts();
-  Object.keys(defaults).forEach(k => { if (!f.parts[k]) f.parts[k] = {...defaults[k]}; });
+  const incomingParts = f.parts && typeof f.parts === 'object' && !Array.isArray(f.parts) ? f.parts : {};
+  f.parts = {};
+  Object.keys(defaults).forEach(k => { f.parts[k] = normalizeFlightPartValue(k, incomingParts[k], defaults[k]); });
   f.dep1 ||= ''; f.arr1 ||= ''; f.dep2 ||= ''; f.arr2 ||= ''; f.block ||= '00:00'; f.manualBlock ||= '';
   f.crewContact = String(f.crewContact || '').trim();
   f.takeoffs = /^\d{1,2}$/.test(String(f.takeoffs || '').trim()) ? String(f.takeoffs).trim() : '';
@@ -4605,7 +4666,7 @@ function renderTechTimeField(label, inputId, value, monthName, flightId){
           <input id="${inputId}" class="input" type="time" step="60" inputmode="numeric" value="${escapeHtml(safeValue)}">
         </div>`;
 }
-function createFlight(){
+async function createFlight(){
   const msg = document.getElementById('flightCreateMsg');
   const flightDateInputValue = document.getElementById('flightDate').value || '';
   const date = inputValueToDate(flightDateInputValue);
@@ -4636,7 +4697,18 @@ function createFlight(){
   flight.crewContact = crewContact;
   flight.takeoffs = takeoffs;
   flight.landings = landings;
-  if (usesMonthlySequenceOrdering(monthName)) flight.sequenceNumber = getNextMonthSequenceNumber(month);
+  let sequenceInsertionApplied = false;
+  if (usesMonthlySequenceOrdering(monthName)) {
+    const insertionInfo = getMonthSequenceInsertionInfo(month, flightDateInputValue);
+    if (insertionInfo?.targetSequenceNumber) {
+      const ok = await requestAppConfirm('התאריך שנבחר נכנס לפני פעילויות קיימות בחודש. האם להכניס את מספר הפעילות לפי התאריך ולעדכן את המשך הרצף?');
+      if (ok) {
+        insertFlightIntoMonthSequence(month, flight, insertionInfo.targetSequenceNumber);
+        sequenceInsertionApplied = true;
+      }
+    }
+    if (!sequenceInsertionApplied) flight.sequenceNumber = getNextMonthSequenceNumber(month);
+  }
   month.flights.push(flight);
   ui.openMonths[monthName] = true;
   ui.openFlights[flight.id] = true;
@@ -5744,6 +5816,39 @@ function routeRowsToFixMap(routeRows){
   });
   return map;
 }
+function getChangedRouteFixEntries(previousRouteRows, nextRouteRows){
+  const previousMap = routeRowsToFixMap(previousRouteRows);
+  const nextMap = routeRowsToFixMap(nextRouteRows);
+  const keys = new Set([...Object.keys(previousMap), ...Object.keys(nextMap)]);
+  return Array.from(keys)
+    .filter(key => String(previousMap[key] || '').trim() !== String(nextMap[key] || '').trim())
+    .map(key => ({
+      key,
+      previousFix: String(previousMap[key] || '').trim(),
+      nextFix: String(nextMap[key] || '').trim()
+    }));
+}
+function applyRouteFixRetroactivePreference(routeKeys, applyRetroactive){
+  const normalizedKeys = new Set((routeKeys || []).map(key => normalizeRouteKey(key)).filter(Boolean));
+  if (!normalizedKeys.size) return;
+  (model.months || []).forEach(month => {
+    (month.flights || []).forEach(flight => {
+      if (!normalizedKeys.has(normalizeRouteKey(flight.route))) return;
+      ensureFlightShape(flight);
+      if (applyRetroactive) {
+        if (flight.parts.fix.routeFrozen && flight.parts.fix.manual !== '') {
+          flight.parts.fix.manual = '';
+          flight.parts.fix.routeFrozen = false;
+        }
+        return;
+      }
+      if (isManual(flight.parts.fix) && !flight.parts.fix.routeFrozen) return;
+      const currentFix = finalValue(flight.parts.fix || { calc: calculateFixCalc(flight), manual: '' });
+      flight.parts.fix.manual = normalizeDurationHHMM(String(currentFix || '').trim()) || '00:00';
+      flight.parts.fix.routeFrozen = true;
+    });
+  });
+}
 function routeRowsToLogbookMap(routeRows){
   const map = {};
   (routeRows || []).forEach(row => {
@@ -5912,11 +6017,21 @@ function cancelMasterDataChanges(){
 async function saveMasterDataChanges(){
   const ok = confirm('האם לשמור את עדכוני ה-Master Data? השינויים יתעדכנו במערכת ובענן.');
   if (!ok) return;
+  const previousMasterData = getActiveMasterData();
   const draft = refreshMasterDataExcelRows(getMasterDataDraft());
-  model.masterData = applyCompensationDraftFromCurrentMonth(getActiveMasterData(), draft);
+  const nextMasterData = applyCompensationDraftFromCurrentMonth(previousMasterData, draft);
+  const changedRouteFixEntries = getChangedRouteFixEntries(previousMasterData.routeRows, nextMasterData.routeRows);
+  let applyRetroactiveFixUpdates = true;
+  if (changedRouteFixEntries.length) {
+    const routeLabels = changedRouteFixEntries.map(entry => entry.key).join(', ');
+    applyRetroactiveFixUpdates = await requestAppConfirm(`זוהה שינוי פיקס בנתיבים: ${routeLabels}. האם לעדכן רטרואקטיבית גם טיסות קיימות?`);
+    applyRouteFixRetroactivePreference(changedRouteFixEntries.map(entry => entry.key), applyRetroactiveFixUpdates);
+  }
+  model.masterData = nextMasterData;
   const savedAt = new Date().toISOString();
   persistMasterDataSettingsLocally();
   persistMasterDataSnapshotLocally(CLOUD_APP_ID, savedAt, true);
+  await persistFullSnapshotLocally(CLOUD_APP_ID, savedAt, true, serializeModel());
   ui.masterDataDraft = getActiveMasterData();
   ui.masterDataDirty = false;
   updateRouteOptionsList();
@@ -7224,13 +7339,24 @@ async function loadFromCloud(){
       }
     } else if (data && data.payload) {
       const cloudUpdatedAt = String(data.updated_at || '').trim();
-      const localSavedAt = String(localFullSnapshot?.savedAt || localSnapshot?.savedAt || '').trim();
-      const preferLocalFullSnapshot = !!(localFullSnapshot?.pendingCloudSync && localSavedAt && cloudUpdatedAt && localSavedAt > cloudUpdatedAt);
-      const preferLocalMasterData = !!(!preferLocalFullSnapshot && localSnapshot?.pendingCloudSync && localSnapshot?.masterData && localSavedAt && cloudUpdatedAt && localSavedAt > cloudUpdatedAt);
+      const localFullSavedAt = String(localFullSnapshot?.savedAt || '').trim();
+      const localMasterSavedAt = String(localSnapshot?.savedAt || '').trim();
+      const preferLocalFullSnapshot = !!(
+        localFullSnapshot?.pendingCloudSync &&
+        localFullSavedAt &&
+        (!cloudUpdatedAt || localFullSavedAt > cloudUpdatedAt)
+      );
+      const preferLocalMasterData = !!(
+        !preferLocalFullSnapshot &&
+        localSnapshot?.pendingCloudSync &&
+        localSnapshot?.masterData &&
+        localMasterSavedAt &&
+        (!cloudUpdatedAt || localMasterSavedAt > cloudUpdatedAt)
+      );
       const mergedPayload = preferLocalFullSnapshot
         ? localFullSnapshot.payload
         : (preferLocalMasterData ? { ...data.payload, masterData: localSnapshot.masterData } : data.payload);
-      mergeCloudModel(mergedPayload, preferLocalFullSnapshot ? localSavedAt : (preferLocalMasterData ? localSavedAt : cloudUpdatedAt), {
+      mergeCloudModel(mergedPayload, preferLocalFullSnapshot ? localFullSavedAt : (preferLocalMasterData ? localMasterSavedAt : cloudUpdatedAt), {
         pendingCloudSync: preferLocalFullSnapshot || preferLocalMasterData
       });
       shouldSyncLocalToCloud = preferLocalFullSnapshot || preferLocalMasterData;
