@@ -1990,7 +1990,7 @@ color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto
       <div id="masterDataMount"></div>
     </div>
   </div>
-  <div class="app-version-footer">גרסה 181.290</div>
+  <div class="app-version-footer">גרסה 181.293</div>
 </div>
 
 <datalist id="routeOptionsList">
@@ -4222,7 +4222,8 @@ function hasHoursBIntegrityMismatch(month){
   const expectedFromDisplayedBase = Math.max(0, Math.round(Math.max(0, displayedBaseHours - threshold) / 2));
   return totalByPart(month,'hoursB') !== expectedFromDisplayedBase;
 }
-function calculateOffsetCalc(f){
+function calculateOffsetCalc(monthName, f){
+  if (monthSortKey(monthName) >= 202605) return '00:00';
   const daysB = toMinutes(finalValue(f.parts.daysB));
   const shabbat = toMinutes(finalValue(f.parts.shabbat));
   const hoursB = toMinutes(finalValue(f.parts.hoursB));
@@ -4381,7 +4382,7 @@ function recomputeHoursBAndOffsetForMonth(month){
 
   month.flights.forEach(f => {
     ensureFlightShape(f);
-    if (f.parts.offset) f.parts.offset.calc = calculateOffsetCalc(f);
+    if (f.parts.offset) f.parts.offset.calc = calculateOffsetCalc(month.monthName, f);
   });
 }
 function recomputeStayAccelForMonth(month){
