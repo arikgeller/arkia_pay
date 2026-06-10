@@ -1990,7 +1990,7 @@ color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto
       <div id="masterDataMount"></div>
     </div>
   </div>
-  <div class="app-version-footer">גרסה 181.293</div>
+  <div class="app-version-footer">גרסה 181.297</div>
 </div>
 
 <datalist id="routeOptionsList">
@@ -2852,6 +2852,7 @@ function getFlightEshelStayDays(flight, stayAllocation){
 function getFlightEshelTotalDays(flight){
   ensureFlightShape(flight);
   if (String(flight.manualEshelDays || '').trim() !== '') return Number(flight.manualEshelDays || 0);
+  if (normalizeRouteKey(flight.route) === 'sim') return 3;
   return Number(flight.eshelFlightDays || 0) + Number(flight.eshelStayDays || 0);
 }
 function recomputeMonthEshel(month){
@@ -3167,6 +3168,7 @@ const HOLIDAY_WINDOWS = [
   { name:'סוכות א', start:'2033-10-07', end:'2033-10-08' },
   { name:'סוכות ב', start:'2033-10-14', end:'2033-10-15' }
 ];
+const ELECTION_DAY_WINDOWS = [];
 
 function parseDateLabelWithYear(dateLabel, fallbackYear){
   const s = String(dateLabel || '').trim();
@@ -3735,6 +3737,11 @@ function buildActivityDayIncrementMap(month){
       return;
     }
 
+    if (routeKey === 'sim') {
+      increments.set(String(flight.id), 3);
+      return;
+    }
+
     const stats = dayStats.get(dateKey) || { total: 0, nonStay: 0 };
     const standbyStats = standbyDayContext.get(dateKey) || { hasStandby: false, hasFlightRoute: false, countedStandbyIndex: 0 };
     if (routeKey === 'stay') {
@@ -4088,7 +4095,7 @@ function buildWeeklyShabbatWindows(rangeStart, rangeEnd){
   return windows;
 }
 function getMergedShabbatHolidayWindows(rangeStart, rangeEnd){
-  const holidayWindows = HOLIDAY_WINDOWS
+  const holidayWindows = [...HOLIDAY_WINDOWS, ...ELECTION_DAY_WINDOWS]
     .map(buildHolidayWindowBounds)
     .filter(Boolean)
     .filter(bounds => rangeStart < bounds.endExclusive && rangeEnd > bounds.start);
@@ -4402,7 +4409,7 @@ function recomputeStayAccelForMonth(month){
       const overflowMinutes = Math.max(0, afterExcess - beforeExcess);
       if (overflowMinutes > 0) {
         const ratio = Math.min(1, overflowMinutes / stayDurationMinutes);
-        stayAccelMinutes = Math.round(baseStayPayMinutes * ratio * 0.25);
+        stayAccelMinutes = Math.round(baseStayPayMinutes * ratio * 0.5);
       }
     } else {
       f.cumulativeStayAccelHours = toHHMM(cumulativeStayMinutes);
