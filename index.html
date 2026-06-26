@@ -1990,7 +1990,7 @@ color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto
       <div id="masterDataMount"></div>
     </div>
   </div>
-  <div class="app-version-footer">גרסה 181.297</div>
+  <div class="app-version-footer">גרסה 181.305</div>
 </div>
 
 <datalist id="routeOptionsList">
@@ -5248,8 +5248,15 @@ function updateLogbookManual(key, field, value){
       const previousBlock = String(payrollLink.flight.block || '00:00');
       payrollLink.flight.manualBlock = normalizedBlock;
       recalcMonthFromFlightChange(payrollLink.month);
-      if (!manualEntry.pic || manualEntry.pic === previousBlock) manualEntry.pic = payrollLink.flight.block || normalizedBlock || '00:00';
-      manualEntry.block = payrollLink.flight.block || normalizedBlock || '00:00';
+      const currentBlock = payrollLink.flight.block || normalizedBlock || '00:00';
+      if (
+        !manualEntry.pic
+        || manualEntry.pic === previousBlock
+        || toMinutes(manualEntry.pic || '00:00') > toMinutes(currentBlock)
+      ) {
+        manualEntry.pic = currentBlock;
+      }
+      manualEntry.block = currentBlock;
       if (typeof scheduleCloudSave === 'function') scheduleCloudSave();
       return;
     }
@@ -5395,6 +5402,22 @@ function buildLogbookRows(){
 
   rows.sort((a,b) => compareLogbookRows(a, b, 'asc'));
   return rows;
+}
+function normalizePayrollLogbookPicRows(rows){
+  if (!ui.logbookManual) ui.logbookManual = {};
+  let changed = false;
+  rows.forEach(row => {
+    if (!row?.isPayrollRow) return;
+    if (String(row.date || '').trim() < LOGBOOK_PAYROLL_START_DATE) return;
+    const blockMinutes = toMinutes(row.block || '00:00');
+    const picMinutes = toMinutes(row.pic || '00:00');
+    if (picMinutes <= blockMinutes) return;
+    const existing = ui.logbookManual[row.key] || { takeoffs:'', landings:'', rem:'', pic:'', block:'00:00' };
+    existing.pic = row.block || '00:00';
+    ui.logbookManual[row.key] = existing;
+    changed = true;
+  });
+  return changed;
 }
 
 function logbookDateObject(isoDate){
@@ -6323,7 +6346,11 @@ function renderLogbook(){
   if (!mount) return;
   const prevFrom = document.getElementById('logbookPdfFrom')?.value || ui.logbookPdfFrom || '';
   const prevTo = document.getElementById('logbookPdfTo')?.value || ui.logbookPdfTo || '';
-  const rows = buildLogbookRows();
+  let rows = buildLogbookRows();
+  if (normalizePayrollLogbookPicRows(rows)) {
+    if (typeof scheduleCloudSave === 'function') scheduleCloudSave();
+    rows = buildLogbookRows();
+  }
   if (!rows.length) {
     mount.innerHTML = '<div class="logbook-empty">לא נמצאו רשומות לוגבוק מיובאות מהאקסל.</div>';
     return;
