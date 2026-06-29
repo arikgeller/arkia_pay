@@ -1990,7 +1990,7 @@ color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto
       <div id="masterDataMount"></div>
     </div>
   </div>
-  <div class="app-version-footer">גרסה 181.305</div>
+  <div class="app-version-footer">גרסה 181.307</div>
 </div>
 
 <datalist id="routeOptionsList">
@@ -2231,6 +2231,9 @@ const STAY_ROUTE_VALUES = {'stay':'03:00'};
 const DEFAULT_MINIMUM_EMPLOYMENT_ILS = 55785;
 const DEFAULT_HOURLY_RATE = 0;
 const COMPENSATION_HISTORY_BASE_MONTH_KEY = 190001;
+const ARIK_COMPENSATION_UPDATE_MONTH_KEY = 202607;
+const ARIK_JULY_2026_MINIMUM_EMPLOYMENT_ILS = 61698;
+const ARIK_JULY_2026_HOURLY_RATE = 700.35;
 const MASTERDATA_SETTINGS_STORAGE_PREFIX = 'arkia-masterdata-settings:';
 const FULL_SNAPSHOT_STORAGE_PREFIX = 'arkia-full-snapshot:';
 const FULL_SNAPSHOT_DB_NAME = 'arkia-local-backup';
@@ -2279,6 +2282,29 @@ function getEffectiveMinimumEmploymentIls(monthName){
 function getEffectiveHourlyRate(monthName){
   const value = Number(getCompensationSettingsForMonth(monthName).defaultHourlyRate);
   return Number.isFinite(value) && value >= 0 ? value : DEFAULT_HOURLY_RATE;
+}
+function applyUserSpecificCompensationHistory(masterData, appId){
+  const activeAppId = String(appId || CLOUD_APP_ID || '').trim();
+  if (activeAppId !== 'arkia-pay-arik') return masterData;
+  const history = normalizeCompensationHistory(
+    masterData.compensationHistory,
+    masterData.minimumEmploymentIls,
+    masterData.defaultHourlyRate
+  );
+  const targetEntry = {
+    effectiveMonthKey: ARIK_COMPENSATION_UPDATE_MONTH_KEY,
+    minimumEmploymentIls: ARIK_JULY_2026_MINIMUM_EMPLOYMENT_ILS,
+    defaultHourlyRate: ARIK_JULY_2026_HOURLY_RATE
+  };
+  const existingIndex = history.findIndex(entry => entry.effectiveMonthKey === ARIK_COMPENSATION_UPDATE_MONTH_KEY);
+  if (existingIndex >= 0) {
+    history[existingIndex] = targetEntry;
+  } else {
+    history.push(targetEntry);
+  }
+  history.sort((a,b) => a.effectiveMonthKey - b.effectiveMonthKey);
+  masterData.compensationHistory = history;
+  return masterData;
 }
 
 function getMasterDataSettingsStorageKey(appId){
@@ -5765,7 +5791,7 @@ function getDefaultMasterData(){
 function ensureMasterDataShape(data){
   const defaults = getDefaultMasterData();
   const src = data && typeof data === 'object' ? data : {};
-  return {
+  const shaped = {
     routeRows: Array.isArray(src.routeRows) ? cloneJson(src.routeRows) : defaults.routeRows,
     aircraftRows: Array.isArray(src.aircraftRows) ? cloneJson(src.aircraftRows) : defaults.aircraftRows,
     crewRows: Array.isArray(src.crewRows) ? cloneJson(src.crewRows) : defaults.crewRows,
@@ -5779,6 +5805,7 @@ function ensureMasterDataShape(data){
     pilotRole: String(src.pilotRole ?? defaults.pilotRole).trim(),
     companyName: String(src.companyName ?? defaults.companyName).trim()
   };
+  return applyUserSpecificCompensationHistory(shaped);
 }
 model.masterData = ensureMasterDataShape(model.masterData);
 function getActiveMasterData(){
