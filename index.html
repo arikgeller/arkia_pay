@@ -89,6 +89,8 @@ color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto
 .flight-row{padding:10px 8px;min-height:48px}
 .date{font-size:12px;font-weight:800;text-align:center}
 .route-wrap{min-width:0;text-align:right}.route{font-size:13px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.sub{font-size:10px;color:var(--muted);margin-top:2px}
+.route.route-alert{color:#b91c1c}
+#payrollScreen .route.route-alert{color:#b91c1c !important}
 .times,.block,.pay{font-size:12px;text-align:center}
 .block,.pay{background:var(--soft);border-radius:10px;padding:8px 4px;font-weight:800}.block.manual,.pay.manual{background:var(--manual)}
 .blocks{display:grid;grid-template-columns:1fr 1fr;gap:8px}
@@ -447,6 +449,12 @@ color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto
 .masterdata-table-wrap.ltr,.masterdata-table.ltr{direction:ltr}
 .masterdata-table.ltr th,.masterdata-table.ltr td{text-align:left}
 .masterdata-table.ltr td.route-name,.masterdata-table.ltr th.route-name{text-align:left}
+.masterdata-route-cell{display:flex;align-items:center;gap:6px;min-width:0}
+.masterdata-route-drag{flex:0 0 auto;width:30px;height:30px;border:1px dashed #c6d5e6;border-radius:10px;background:#f8fbff;color:var(--brand-strong);cursor:grab;font-size:14px;font-weight:900;line-height:1}
+.masterdata-route-drag:active{cursor:grabbing}
+.masterdata-route-drop-target td{background:#eef6ff}
+.masterdata-route-end-drop td{padding:10px 8px;text-align:center;font-size:10px;color:var(--muted);background:#fbfdff}
+.masterdata-route-end-drop button{cursor:pointer}
 .masterdata-code-list{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
 .masterdata-code-card{border:1px solid var(--line);border-radius:12px;background:#fff;padding:12px 10px;text-align:center;font-weight:800}
 .masterdata-code-card .sub{font-size:10px;color:var(--muted);margin-top:6px}
@@ -934,6 +942,20 @@ color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto
   border:1px solid #dbe6f2;
   box-shadow:0 16px 28px rgba(8,29,49,.055);
   background:linear-gradient(180deg,#ffffff 0%, #f9fcff 100%);
+}
+
+#payrollScreen .chipbox.total{
+  grid-column:auto;
+}
+
+#payrollScreen .chipbox.alert{
+  background:#fef2f2;
+  border-color:#fecaca;
+}
+
+#payrollScreen .chipbox.alert .k,
+#payrollScreen .chipbox.alert .display-value{
+  color:#b91c1c;
 }
 
 #payrollScreen .chipbox .k{
@@ -1990,7 +2012,7 @@ color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto
       <div id="masterDataMount"></div>
     </div>
   </div>
-  <div class="app-version-footer">גרסה 181.307</div>
+  <div class="app-version-footer">גרסה 181.314</div>
 </div>
 
 <datalist id="routeOptionsList">
@@ -2147,7 +2169,7 @@ color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
 <script>
-const ui = { editing: null, drafts: {}, openMonths: {}, openFlights: {}, newMonthFormOpen: false, newFlightFormOpen: false, screen: 'payroll', masterDataDraft: null, masterDataDirty: false, masterDataOpen: {} };
+const ui = { editing: null, drafts: {}, openMonths: {}, openFlights: {}, newMonthFormOpen: false, newFlightFormOpen: false, screen: 'payroll', masterDataDraft: null, masterDataDirty: false, masterDataOpen: {}, masterDataDrag: null, masterDataDragOver: null };
 const model = {
   months: [
     {
@@ -2284,7 +2306,8 @@ function getEffectiveHourlyRate(monthName){
   return Number.isFinite(value) && value >= 0 ? value : DEFAULT_HOURLY_RATE;
 }
 function applyUserSpecificCompensationHistory(masterData, appId){
-  const activeAppId = String(appId || CLOUD_APP_ID || '').trim();
+  const activeCloudAppId = typeof CLOUD_APP_ID !== 'undefined' ? CLOUD_APP_ID : '';
+  const activeAppId = String(appId || activeCloudAppId || '').trim();
   if (activeAppId !== 'arkia-pay-arik') return masterData;
   const history = normalizeCompensationHistory(
     masterData.compensationHistory,
@@ -5071,7 +5094,16 @@ function renderFlightBlocks(monthName, f){
   return blocks.join('');
 }
 
-function renderMonth(month){
+function renderFlight28DayLimitBox(monthName, flight, limitMap){
+  if (!routeIsActivity(flight?.route) || containsDhNote(flight?.note)) {
+    return '<div class="chipbox total"><div class="k">מגבלת 28 יום</div><div class="display-value">--:--</div></div>';
+  }
+  const info = limitMap instanceof Map ? limitMap.get(String(flight.id)) : null;
+  const minutes = Number(info?.minutes || 0);
+  const alert = !!info?.alert;
+  return `<div class="chipbox total ${alert ? 'alert' : ''}"><div class="k">מגבלת 28 יום</div><div class="display-value">${escapeHtml(toHHMM(minutes))}</div></div>`;
+}
+function renderMonth(month, limitMap){
   const displayFlights = getSortedFlightsForMonth(month).slice().reverse();
   return `
     <div class="month-summary">
@@ -5126,11 +5158,13 @@ function renderMonth(month){
           <div class="list-header"><div>תאריך</div><div>נתיב</div><div>זמנים</div><div>אשל</div><div>פעילות</div><div>בלוק</div><div>לתשלום</div><div></div></div>
           ${displayFlights.map(f => {
             const hasManual = Object.values(f.parts).some(isManual);
+            const limitInfo = limitMap instanceof Map ? limitMap.get(String(f.id)) : null;
+            const routeAlertClass = limitInfo?.alert ? 'route-alert' : '';
             return `
               <div class="flight">
                 <div class="flight-row">
                   <div class="date">${escapeHtml(f.date)}</div>
-                  <div class="route-wrap"><div class="route">${escapeHtml(f.route)}</div><div class="sub">${escapeHtml([f.subtitle, f.aircraft || '', containsDhNote(f.note) ? 'DH' : ''].filter(Boolean).join(' · '))}</div></div>
+                  <div class="route-wrap"><div class="route ${routeAlertClass}">${escapeHtml(f.route)}</div><div class="sub">${escapeHtml([f.subtitle, f.aircraft || '', containsDhNote(f.note) ? 'DH' : ''].filter(Boolean).join(' · '))}</div></div>
                   <div class="times">${escapeHtml(f.times)}</div>
                   <div class="pay">${escapeHtml(String(getFlightEshelTotalDays(f)))}</div>
                   <div class="pay">${escapeHtml(String(getFlightActivityDaysForDisplay(month, f.id)))}</div>
@@ -5142,6 +5176,7 @@ function renderMonth(month){
                   <div class="blocks">
                     ${renderTechEditor(month.monthName, f)}
                     ${renderFlightBlocks(month.monthName, f)}
+                    ${renderFlight28DayLimitBox(month.monthName, f, limitMap)}
                     <div class="chipbox total"><div class="k">סך שעות לתשלום בטיסה</div><div class="display-value">${flightPayable(f)}</div></div>
                   </div>
                 </div>
@@ -5647,6 +5682,94 @@ function buildLogbookSummary(rows){
     thisMonth: toHHMM(sumBlockMinutes(rows, inThisMonth))
   };
 }
+function isFtl28EligibleLogbookRow(row){
+  if (!row) return false;
+  if (containsDhNote(row.rem || '')) return false;
+  if (/^sim\b/i.test(String(row.type || '').trim())) return false;
+  return toMinutes(row.block || '00:00') > 0;
+}
+function compareFtlTimelineEntries(a, b){
+  if (a.date !== b.date) return a.date.localeCompare(b.date);
+  const timeA = isValidTime(a.departureTime) ? a.departureTime : '';
+  const timeB = isValidTime(b.departureTime) ? b.departureTime : '';
+  if (timeA && timeB && timeA !== timeB) return timeA.localeCompare(timeB);
+  if (timeA && !timeB) return -1;
+  if (!timeA && timeB) return 1;
+  const seqA = Number(a.sequenceNumber || 0);
+  const seqB = Number(b.sequenceNumber || 0);
+  if (seqA !== seqB) return seqA - seqB;
+  return String(a.key || '').localeCompare(String(b.key || ''));
+}
+function buildPayrollFlightFtl28LimitMap(){
+  const limitMap = new Map();
+  const timeline = [];
+  const seenPayrollKeys = new Set();
+
+  buildLogbookRows()
+    .filter(isFtl28EligibleLogbookRow)
+    .forEach((row, index) => {
+      const blockMinutes = toMinutes(row.block || '00:00');
+      if (blockMinutes <= 0) return;
+      const key = String(row.key || `logbook-${index}`);
+      timeline.push({
+        key,
+        flightId: row.isPayrollRow ? key.slice('payroll-'.length) : '',
+        date: String(row.date || '').trim(),
+        departureTime: getLogbookRowSortTime(row),
+        sequenceNumber: Number(row.sequenceNumber || 0),
+        blockMinutes,
+        dayStamp: (row.dateObj instanceof Date) ? row.dateObj.getTime() : NaN
+      });
+      if (row.isPayrollRow) seenPayrollKeys.add(key);
+    });
+
+  (model.months || []).forEach(month => {
+    const logicalFlights = getFlightsInLogicalSequence(month);
+    logicalFlights.forEach((flight, index) => {
+      ensureFlightShape(flight);
+      const route = String(flight.route || '').trim();
+      if (!routeIsActivity(route) || containsDhNote(flight.note)) return;
+      const isoDate = dateToInputValue(flight.date, month.monthName);
+      if (!isoDate) return;
+      const payrollKey = `payroll-${flight.id}`;
+      if (seenPayrollKeys.has(payrollKey)) return;
+      const blockMinutes = getEffectiveBlockMinutes(flight);
+      if (blockMinutes <= 0) return;
+      const dayStamp = new Date(`${isoDate}T00:00:00`).getTime();
+      if (!Number.isFinite(dayStamp)) return;
+      timeline.push({
+        key: payrollKey,
+        flightId: String(flight.id),
+        date: isoDate,
+        departureTime: getFlightDepartureTimeForLogic(flight),
+        sequenceNumber: getFlightSequenceNumber(flight, index),
+        blockMinutes,
+        dayStamp
+      });
+    });
+  });
+
+  timeline.sort(compareFtlTimelineEntries);
+
+  const windowSpanMs = 27 * 24 * 60 * 60 * 1000;
+  let windowStart = 0;
+  let runningMinutes = 0;
+  timeline.forEach((entry, index) => {
+    if (!Number.isFinite(entry.dayStamp)) return;
+    while (windowStart < index && (entry.dayStamp - timeline[windowStart].dayStamp) > windowSpanMs) {
+      runningMinutes -= Number(timeline[windowStart].blockMinutes || 0);
+      windowStart += 1;
+    }
+    runningMinutes += Number(entry.blockMinutes || 0);
+    if (entry.flightId) {
+      limitMap.set(entry.flightId, {
+        minutes: runningMinutes,
+        alert: runningMinutes > (95 * 60)
+      });
+    }
+  });
+  return limitMap;
+}
 function buildLogbookYearlyTotals(rows){
   const yearsMap = new Map();
   rows.forEach(row => {
@@ -6040,6 +6163,56 @@ function updateMasterDataDraftField(section, index, field, value){
   draft[section][index][field] = value;
   ui.masterDataDirty = true;
 }
+function resetMasterDataRouteDragState(){
+  ui.masterDataDrag = null;
+  ui.masterDataDragOver = null;
+}
+function moveMasterDataRow(section, fromIndex, toIndex){
+  const draft = refreshMasterDataExcelRows(getMasterDataDraft());
+  if (!draft[section] || fromIndex === toIndex) return false;
+  const from = Number(fromIndex);
+  const to = Number(toIndex);
+  if (!Number.isInteger(from) || !Number.isInteger(to)) return false;
+  if (from < 0 || to < 0 || from >= draft[section].length || to > draft[section].length) return false;
+  const [movedRow] = draft[section].splice(from, 1);
+  if (!movedRow) return false;
+  const insertAt = from < to ? (to - 1) : to;
+  draft[section].splice(insertAt, 0, movedRow);
+  refreshMasterDataExcelRows(draft);
+  ui.masterDataDirty = true;
+  ui.masterDataOpen[section] = true;
+  resetMasterDataRouteDragState();
+  renderMasterData();
+  return true;
+}
+function startMasterDataRowDrag(section, index, event){
+  if (section !== 'routeRows') return;
+  ui.masterDataDrag = { section, index: Number(index) };
+  ui.masterDataDragOver = Number(index);
+  if (event?.dataTransfer) {
+    event.dataTransfer.effectAllowed = 'move';
+    event.dataTransfer.setData('text/plain', `${section}:${index}`);
+  }
+}
+function setMasterDataRowDragOver(section, index, event){
+  if (section !== 'routeRows') return;
+  if (!ui.masterDataDrag || ui.masterDataDrag.section !== section) return;
+  if (event) event.preventDefault();
+  ui.masterDataDragOver = Number(index);
+}
+function dropMasterDataRow(section, index, event){
+  if (event) event.preventDefault();
+  if (section !== 'routeRows') return;
+  const dragged = ui.masterDataDrag;
+  if (!dragged || dragged.section !== section) {
+    resetMasterDataRouteDragState();
+    return;
+  }
+  moveMasterDataRow(section, dragged.index, Number(index));
+}
+function endMasterDataRowDrag(){
+  resetMasterDataRouteDragState();
+}
 function updateMasterDataDraftSetting(field, value){
   const draft = getMasterDataDraft();
   if (!draft || typeof draft !== 'object') return;
@@ -6074,6 +6247,7 @@ function addMasterDataRow(section){
   refreshMasterDataExcelRows(draft);
   ui.masterDataDirty = true;
   ui.masterDataOpen[section] = true;
+  resetMasterDataRouteDragState();
   renderMasterData();
 }
 function removeMasterDataRow(section, index){
@@ -6083,11 +6257,13 @@ function removeMasterDataRow(section, index){
   refreshMasterDataExcelRows(draft);
   ui.masterDataDirty = true;
   ui.masterDataOpen[section] = true;
+  resetMasterDataRouteDragState();
   renderMasterData();
 }
 function cancelMasterDataChanges(){
   ui.masterDataDraft = getActiveMasterData();
   ui.masterDataDirty = false;
+  resetMasterDataRouteDragState();
   renderMasterData();
 }
 async function saveMasterDataChanges(){
@@ -6110,6 +6286,7 @@ async function saveMasterDataChanges(){
   await persistFullSnapshotLocally(CLOUD_APP_ID, savedAt, true, serializeModel());
   ui.masterDataDraft = getActiveMasterData();
   ui.masterDataDirty = false;
+  resetMasterDataRouteDragState();
   updateRouteOptionsList();
   updateAircraftOptionsList();
   updateCrewOptionsList();
@@ -6202,15 +6379,20 @@ function renderMasterData(){
           <table class="masterdata-table ltr">
             <thead><tr><th>Excel Row</th><th class="route-name">Route</th><th>Fix</th><th>DEP</th><th>MID</th><th>ARR</th><th></th></tr></thead>
             <tbody>
-              ${routeRows.length ? routeRows.map((row,index) => `<tr>
+              ${routeRows.length ? routeRows.map((row,index) => `<tr draggable="true" class="${ui.masterDataDragOver === index ? 'masterdata-route-drop-target' : ''}" ondragstart="startMasterDataRowDrag('routeRows', ${index}, event)" ondragover="setMasterDataRowDragOver('routeRows', ${index}, event)" ondrop="dropMasterDataRow('routeRows', ${index}, event)" ondragend="endMasterDataRowDrag()">
                 <td>${row.excelRow}</td>
-                <td class="route-name"><input class="logbook-cell-input rem" type="text" value="${escapeAttr(row.route || '')}" oninput="updateMasterDataDraftField('routeRows', ${index}, 'route', this.value)"></td>
+                <td class="route-name">
+                  <div class="masterdata-route-cell">
+                    <button class="masterdata-route-drag" draggable="true" ondragstart="startMasterDataRowDrag('routeRows', ${index}, event)" ondragend="endMasterDataRowDrag()" type="button" title="גרור למיקום חדש" aria-label="גרור נתיב למיקום חדש">⋮⋮</button>
+                    <input class="logbook-cell-input rem" type="text" value="${escapeAttr(row.route || '')}" oninput="updateMasterDataDraftField('routeRows', ${index}, 'route', this.value)">
+                  </div>
+                </td>
                 <td><input class="logbook-cell-input" type="text" value="${escapeAttr(row.fix || '')}" oninput="updateMasterDataDraftField('routeRows', ${index}, 'fix', this.value)"></td>
                 <td><input class="logbook-cell-input" type="text" value="${escapeAttr(row.dep || '')}" oninput="updateMasterDataDraftField('routeRows', ${index}, 'dep', this.value)"></td>
                 <td><input class="logbook-cell-input" type="text" value="${escapeAttr(row.mid || '')}" oninput="updateMasterDataDraftField('routeRows', ${index}, 'mid', this.value)"></td>
                 <td><input class="logbook-cell-input" type="text" value="${escapeAttr(row.arr || '')}" oninput="updateMasterDataDraftField('routeRows', ${index}, 'arr', this.value)"></td>
                 <td><button class="mini-btn" type="button" onclick="removeMasterDataRow('routeRows', ${index})">מחק</button></td>
-              </tr>`).join('') : '<tr><td colspan="7" class="masterdata-empty">לא נמצאו נתיבים.</td></tr>'}
+              </tr>`).join('') + `<tr class="masterdata-route-end-drop ${ui.masterDataDragOver === routeRows.length ? 'masterdata-route-drop-target' : ''}" ondragover="setMasterDataRowDragOver('routeRows', ${routeRows.length}, event)" ondrop="dropMasterDataRow('routeRows', ${routeRows.length}, event)"><td colspan="7">גרור לכאן כדי להעביר את הנתיב לסוף הרשימה</td></tr>` : '<tr><td colspan="7" class="masterdata-empty">לא נמצאו נתיבים.</td></tr>'}
             </tbody>
           </table>
         </div>
@@ -6558,7 +6740,8 @@ function render(){
   if (wrap) wrap.className = ui.newFlightFormOpen ? 'action-popover' : 'collapsed action-popover';
   if (btn) btn.textContent = ui.newFlightFormOpen ? 'סגירת חלון פעילות חדשה' : 'צור פעילות חדשה';
   const monthsForDisplay = [...model.months].sort((a,b) => monthSortKey(b.monthName) - monthSortKey(a.monthName));
-  mount.innerHTML = monthsForDisplay.map(renderMonth).join('');
+  const payrollFlightFtl28Map = buildPayrollFlightFtl28LimitMap();
+  mount.innerHTML = monthsForDisplay.map(month => renderMonth(month, payrollFlightFtl28Map)).join('');
   renderLogbook();
   renderMasterData();
   applyScreenState();
