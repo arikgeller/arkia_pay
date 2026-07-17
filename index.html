@@ -449,6 +449,11 @@ color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto
 .masterdata-table-wrap.ltr,.masterdata-table.ltr{direction:ltr}
 .masterdata-table.ltr th,.masterdata-table.ltr td{text-align:left}
 .masterdata-table.ltr td.route-name,.masterdata-table.ltr th.route-name{text-align:left}
+.masterdata-table.masterdata-route-table th.rownum-col,
+.masterdata-table.masterdata-route-table td.rownum-col{width:44px;min-width:44px;max-width:44px;padding-left:4px;padding-right:4px;text-align:center}
+.masterdata-table.masterdata-route-table th.route-name,
+.masterdata-table.masterdata-route-table td.route-name{width:18%}
+.masterdata-table.masterdata-route-table td.route-name .logbook-cell-input{min-width:110px}
 .masterdata-route-cell{display:flex;align-items:center;gap:6px;min-width:0}
 .masterdata-route-drag{flex:0 0 auto;width:30px;height:30px;border:1px dashed #c6d5e6;border-radius:10px;background:#f8fbff;color:var(--brand-strong);cursor:grab;font-size:14px;font-weight:900;line-height:1}
 .masterdata-route-drag:active{cursor:grabbing}
@@ -481,6 +486,12 @@ color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto
   .masterdata-table-wrap{max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
   .masterdata-table{min-width:560px;table-layout:auto}
   .masterdata-table th,.masterdata-table td{padding:8px 6px;font-size:10px}
+  .masterdata-table.masterdata-route-table{min-width:680px}
+  .masterdata-table.masterdata-route-table th.rownum-col,
+  .masterdata-table.masterdata-route-table td.rownum-col{width:36px;min-width:36px;max-width:36px;padding-left:2px;padding-right:2px}
+  .masterdata-table.masterdata-route-table th.route-name,
+  .masterdata-table.masterdata-route-table td.route-name{width:14%;min-width:78px}
+  .masterdata-table.masterdata-route-table td.route-name .logbook-cell-input{min-width:78px}
   .masterdata-code-list{grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
 }
 @media (max-width:560px){
@@ -491,6 +502,10 @@ color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto
   .actions .btn{flex:1 1 100%;justify-content:center}
   .masterdata-summary{grid-template-columns:1fr}
   .masterdata-table{min-width:480px}
+  .masterdata-table.masterdata-route-table{min-width:720px}
+  .masterdata-table.masterdata-route-table th.route-name,
+  .masterdata-table.masterdata-route-table td.route-name{min-width:90px}
+  .masterdata-table.masterdata-route-table td.route-name .logbook-cell-input{min-width:90px}
 }
 
 
@@ -2012,7 +2027,7 @@ color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto
       <div id="masterDataMount"></div>
     </div>
   </div>
-  <div class="app-version-footer">גרסה 181.314</div>
+  <div class="app-version-footer">גרסה 181.317</div>
 </div>
 
 <datalist id="routeOptionsList">
@@ -6376,11 +6391,11 @@ function renderMasterData(){
       <div class="masterdata-toggle-body">
         <div class="actions" style="margin:0 0 10px"><button class="btn soft" type="button" onclick="addMasterDataRow('routeRows')">הוסף נתיב</button></div>
         <div class="masterdata-table-wrap ltr">
-          <table class="masterdata-table ltr">
-            <thead><tr><th>Excel Row</th><th class="route-name">Route</th><th>Fix</th><th>DEP</th><th>MID</th><th>ARR</th><th></th></tr></thead>
+          <table class="masterdata-table ltr masterdata-route-table">
+            <thead><tr><th class="rownum-col"></th><th class="route-name">Route</th><th>Fix</th><th>DEP</th><th>MID</th><th>ARR</th><th></th></tr></thead>
             <tbody>
               ${routeRows.length ? routeRows.map((row,index) => `<tr draggable="true" class="${ui.masterDataDragOver === index ? 'masterdata-route-drop-target' : ''}" ondragstart="startMasterDataRowDrag('routeRows', ${index}, event)" ondragover="setMasterDataRowDragOver('routeRows', ${index}, event)" ondrop="dropMasterDataRow('routeRows', ${index}, event)" ondragend="endMasterDataRowDrag()">
-                <td>${row.excelRow}</td>
+                <td class="rownum-col">${row.excelRow}</td>
                 <td class="route-name">
                   <div class="masterdata-route-cell">
                     <button class="masterdata-route-drag" draggable="true" ondragstart="startMasterDataRowDrag('routeRows', ${index}, event)" ondragend="endMasterDataRowDrag()" type="button" title="גרור למיקום חדש" aria-label="גרור נתיב למיקום חדש">⋮⋮</button>
