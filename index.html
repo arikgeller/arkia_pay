@@ -977,6 +977,11 @@ color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto
 #payrollScreen .chipbox.alert .display-value{
   color:#b91c1c;
 }
+#payrollScreen .chipbox.alert .stay-col-label,
+#payrollScreen .chipbox.alert .stay-col-value,
+#payrollScreen .chipbox.alert .stay-accel-note{
+  color:#b91c1c;
+}
 
 #payrollScreen .chipbox .k{
   font-size:16px;
@@ -2032,7 +2037,7 @@ color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto
       <div id="masterDataMount"></div>
     </div>
   </div>
-  <div class="app-version-footer">גרסה 181.328</div>
+  <div class="app-version-footer">גרסה 181.329</div>
 </div>
 
 <datalist id="routeOptionsList">
@@ -5189,7 +5194,7 @@ function renderEditablePart(monthName, flightId, key, part){
   const displayLabel = isComputedStayRoute ? 'שהייה' : (isActivityRoute ? getFlightActivityRouteLabel(flight) : part.label);
   const topLabel = isStayRoute ? '' : `<div class="k ${isShabbat ? 'shabbat-k-row' : ''}">${isShabbat ? `<span>${displayLabel}</span>${shabbatToggle}` : displayLabel}</div>`;
   return `
-    <div class="chipbox part-${escapeHtml(String(key))} ${isManual(part)?'manual':''}">
+    <div class="chipbox part-${escapeHtml(String(key))} ${isComputedStayRoute ? 'alert' : ''} ${isManual(part)?'manual':''}">
       ${isManual(part) ? '<div class="manual-mark">manual</div>' : ''}
       ${topLabel}
       ${daysBSubnote}
