@@ -114,6 +114,10 @@ color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto
 .tech-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .tech-time-grid{margin-top:4px}
 .tech-subtitle{text-align:center !important;width:100%;margin:12px 0 8px}
+.tech-execution-header{display:flex;align-items:center;justify-content:center;gap:12px;width:100%;margin:12px 0 8px}
+.tech-execution-header .tech-subtitle{width:auto;margin:0}
+.tech-next-day-label{display:inline-flex;align-items:center;gap:5px;padding:5px 9px;border:1px solid var(--line);border-radius:10px;background:var(--soft);font-size:11px;font-weight:900;color:var(--text);cursor:pointer;user-select:none}
+.tech-next-day-label input{width:17px;height:17px;margin:0;accent-color:var(--brand)}
 .flight-tech-title{font-size:13px !important;font-weight:800 !important;color:var(--text) !important;margin-bottom:8px}
 @media (min-width:769px){#payrollScreen .flight-tech-title{font-size:20px !important;font-weight:900 !important;letter-spacing:-0.01em;color:#0d3558 !important}}
 @media (min-width:769px){
@@ -2037,7 +2041,7 @@ color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto
       <div id="masterDataMount"></div>
     </div>
   </div>
-  <div class="app-version-footer">גרסה 181.329</div>
+  <div class="app-version-footer">גרסה 181.334</div>
 </div>
 
 <datalist id="routeOptionsList">
@@ -2609,7 +2613,7 @@ function normalizeFlightPartValue(key, part, defaultPart){
 function makeFlight(id,row,date,route,dep1,arr1,dep2,arr2,aircraft,note){
   return {
     id,row,date,route,
-    subtitle:'',dep1:dep1||'',arr1:arr1||'',dep2:dep2||'',arr2:arr2||'',dep3:'',arr3:'',dep4:'',arr4:'',
+    subtitle:'',dep1:dep1||'',arr1:arr1||'',dep2:dep2||'',arr2:arr2||'',dep3:'',arr3:'',dep4:'',arr4:'',executionNextDay:false,
     aircraft: aircraft || '',
     crewContact: '',
     takeoffs: '',
@@ -2652,10 +2656,23 @@ function getFlightChangeInfo(flight){
   const executionDep = getRawTimingFirstDeparture(execution);
   const planningArr = getRawTimingRelevantArrival(planning);
   const executionArr = getRawTimingRelevantArrival(execution);
-  const departureAdvanceMinutes = (isValidTime(planningDep) && isValidTime(executionDep)) ? getCircularDirectionalDifferenceMinutes(executionDep, planningDep) : 0;
-  const arrivalDelayMinutes = (isValidTime(planningArr) && isValidTime(executionArr)) ? getCircularDirectionalDifferenceMinutes(planningArr, executionArr) : 0;
-  const departureDiffMinutes = departureAdvanceMinutes <= (12 * 60) ? departureAdvanceMinutes : 0;
-  const arrivalDiffMinutes = arrivalDelayMinutes <= (12 * 60) ? arrivalDelayMinutes : 0;
+  let departureDiffMinutes = 0;
+  let arrivalDiffMinutes = 0;
+  if (flight?.executionNextDay) {
+    const planningBounds = getRelativeTimingBounds(planning, 0);
+    const executionBounds = getRelativeTimingBounds(execution, getFlightTimingDayOffset(flight, 'execution'));
+    departureDiffMinutes = planningBounds && executionBounds
+      ? Math.max(0, planningBounds.startMinutes - executionBounds.startMinutes)
+      : 0;
+    arrivalDiffMinutes = planningBounds && executionBounds
+      ? Math.max(0, executionBounds.endMinutes - planningBounds.endMinutes)
+      : 0;
+  } else {
+    const departureAdvanceMinutes = (isValidTime(planningDep) && isValidTime(executionDep)) ? getCircularDirectionalDifferenceMinutes(executionDep, planningDep) : 0;
+    const arrivalDelayMinutes = (isValidTime(planningArr) && isValidTime(executionArr)) ? getCircularDirectionalDifferenceMinutes(planningArr, executionArr) : 0;
+    departureDiffMinutes = departureAdvanceMinutes <= (12 * 60) ? departureAdvanceMinutes : 0;
+    arrivalDiffMinutes = arrivalDelayMinutes <= (12 * 60) ? arrivalDelayMinutes : 0;
+  }
   const differenceMinutes = Math.max(departureDiffMinutes, arrivalDiffMinutes);
   const code = differenceMinutes >= (6 * 60) ? 6 : (differenceMinutes >= (4 * 60) ? 4 : 0);
   const fixMinutes = toMinutes(finalValue(flight?.parts?.fix || { calc: calculateFixCalc(flight), manual: '' }));
@@ -2919,8 +2936,7 @@ function buildStayEshelAllocation(month, logicalFlights){
         activeChain = null;
         return;
       }
-      const arrivalTime = getFlightArrivalTimeForLogic(flight);
-      const arrivalDateTime = buildFlightDateTime(month.monthName, flight.date, arrivalTime);
+      const arrivalDateTime = getFlightTimelineBounds(month.monthName, flight).endDateTime;
       activeChain = {
         startIndex: index,
         startArrivalDateTime: arrivalDateTime,
@@ -2932,8 +2948,7 @@ function buildStayEshelAllocation(month, logicalFlights){
     if (routeKey === 'stay') {
       const nextFlight = index < logicalFlights.length - 1 ? logicalFlights[index + 1] : null;
       if (!nextFlight) return;
-      const departureTime = getFlightDepartureTimeForLogic(nextFlight);
-      const departureDateTime = buildFlightDateTime(month.monthName, nextFlight.date, departureTime);
+      const departureDateTime = getFlightTimelineBounds(month.monthName, nextFlight).startDateTime;
       if (!activeChain.startArrivalDateTime || !departureDateTime) {
         allocation.set(flight.id, 0);
         return;
@@ -3326,6 +3341,7 @@ function getFlightLegDateTimeRanges(f, monthName){
   const flightBaseDate = new Date(baseDate.year, baseDate.month - 1, baseDate.day, 0, 0, 0, 0);
   const legs = [];
   const timing = getFlightTimingProfile(f, 'effective');
+  flightBaseDate.setDate(flightBaseDate.getDate() + getFlightTimingDayOffset(f, 'effective'));
   const appendLeg = (dep, arr, minStartDateTime = null) => {
     if (!isValidTime(dep) || !isValidTime(arr)) return;
     let start = buildDateTimeFromBaseDate(flightBaseDate, dep);
@@ -3686,6 +3702,36 @@ function getFlightTimingProfile(flight, source='effective'){
     : (source === 'execution' ? execution : (hasExecution ? execution : planning));
   return { ...selected, hasExecution, hasPlanning, sourceUsed: source === 'effective' ? (hasExecution ? 'execution' : 'planning') : source };
 }
+function getFlightTimingDayOffset(flight, source='effective'){
+  const timing = getFlightTimingProfile(flight, source);
+  return timing.sourceUsed === 'execution' && flight?.executionNextDay ? 1 : 0;
+}
+function getRelativeTimingBounds(timing, dayOffset=0){
+  const sequence = [
+    { dep: timing?.dep1, arr: timing?.arr1 },
+    { dep: timing?.dep2, arr: timing?.arr2 }
+  ];
+  let startMinutes = null;
+  let endMinutes = null;
+  let previousEnd = null;
+  sequence.forEach(leg => {
+    if (!isValidTime(leg.dep) || !isValidTime(leg.arr)) return;
+    let depMinutes = toMinutes(leg.dep) + (Number(dayOffset || 0) * 24 * 60);
+    if (previousEnd !== null) while (depMinutes < previousEnd) depMinutes += 24 * 60;
+    let arrMinutes = toMinutes(leg.arr) + (Number(dayOffset || 0) * 24 * 60);
+    while (arrMinutes <= depMinutes) arrMinutes += 24 * 60;
+    if (startMinutes === null) startMinutes = depMinutes;
+    endMinutes = arrMinutes;
+    previousEnd = arrMinutes;
+  });
+  if (startMinutes === null || endMinutes === null) return null;
+  return { startMinutes, endMinutes };
+}
+function getFlightEffectiveIsoDate(monthName, flight){
+  const isoDate = dateToInputValue(flight?.date || '', monthName);
+  if (!isoDate) return '';
+  return addDaysToIsoDate(isoDate, getFlightTimingDayOffset(flight, 'effective'));
+}
 function lastDep(f, source='effective'){ const t = getFlightTimingProfile(f, source); return isValidTime(t.dep2) ? t.dep2 : (isValidTime(t.dep1) ? t.dep1 : ''); }
 function lastArr(f, source='effective'){ const t = getFlightTimingProfile(f, source); return isValidTime(t.arr2) ? t.arr2 : (isValidTime(t.arr1) ? t.arr1 : ''); }
 function firstDep(f, source='effective'){ const t = getFlightTimingProfile(f, source); return isValidTime(t.dep1) ? t.dep1 : (isValidTime(t.dep2) ? t.dep2 : ''); }
@@ -3808,7 +3854,7 @@ function routeCountsForActivityDay(route){
   return !!r && !['vec','sic','canc','mil'].includes(r);
 }
 function getFlightActivityDateKey(monthName, flight){
-  return dateToInputValue(flight?.date || '', monthName);
+  return getFlightEffectiveIsoDate(monthName, flight);
 }
 function addDaysToIsoDate(isoDate, days){
   if (!isoDate) return '';
@@ -4030,25 +4076,9 @@ function calculateStayGapWithinFlight(f){
 const BASE_ACTIVITY_BREAK_MINUTES = 10 * 60;
 function getFlightTimelineBounds(monthName, flight){
   ensureFlightShape(flight);
-  const timing = getFlightTimingProfile(flight, 'effective');
-  const startTime = firstDep(flight, 'effective');
-  const startDateTime = buildFlightDateTime(monthName, flight.date, startTime);
-  if (!startDateTime) return { startDateTime: null, endDateTime: null };
-  if (isValidTime(timing.dep1) && isValidTime(timing.arr1)) {
-    const arr1DateTime = new Date(startDateTime.getTime() + (legMinutes(timing.dep1, timing.arr1) * 60000));
-    if (isValidTime(timing.dep2) && isValidTime(timing.arr2)) {
-      let gapMinutes = toMinutes(timing.dep2) - toMinutes(timing.arr1);
-      if (gapMinutes < 0) gapMinutes += 24 * 60;
-      const dep2DateTime = new Date(arr1DateTime.getTime() + (gapMinutes * 60000));
-      const arr2DateTime = new Date(dep2DateTime.getTime() + (legMinutes(timing.dep2, timing.arr2) * 60000));
-      return { startDateTime, endDateTime: arr2DateTime };
-    }
-    return { startDateTime, endDateTime: arr1DateTime };
-  }
-  if (isValidTime(timing.dep2) && isValidTime(timing.arr2)) {
-    return { startDateTime, endDateTime: new Date(startDateTime.getTime() + (legMinutes(timing.dep2, timing.arr2) * 60000)) };
-  }
-  return { startDateTime, endDateTime: null };
+  const legs = getFlightLegDateTimeRangesForSource(flight, monthName, 'effective');
+  if (!legs.length) return { startDateTime: null, endDateTime: null };
+  return { startDateTime: legs[0].start, endDateTime: legs[legs.length - 1].end };
 }
 function getFlightActivityStartDateTime(monthName, flight){
   ensureFlightShape(flight);
@@ -4063,6 +4093,7 @@ function getFlightLegDateTimeRangesForSource(f, monthName, source='effective', f
   const flightBaseDate = new Date(baseDate.year, baseDate.month - 1, baseDate.day, 0, 0, 0, 0);
   const legs = [];
   const timing = getFlightTimingProfile(f, source);
+  flightBaseDate.setDate(flightBaseDate.getDate() + getFlightTimingDayOffset(f, source));
   const appendLeg = (dep, arr, minStartDateTime = null, preferAnchorForward = false) => {
     if (!isValidTime(dep) || !isValidTime(arr)) return;
     let start = buildDateTimeFromBaseDate(flightBaseDate, dep);
@@ -4092,7 +4123,9 @@ function getFlightActivityEndDateTime(monthName, flight){
   const legs = getFlightLegDateTimeRangesForSource(flight, monthName, source, startDateTime);
   if (legs.length) return legs[legs.length - 1].end;
   const endTime = lastArr(flight, source);
-  return buildFlightDateTime(monthName, flight.date, endTime);
+  const fallbackEnd = buildFlightDateTime(monthName, flight.date, endTime);
+  if (fallbackEnd) fallbackEnd.setDate(fallbackEnd.getDate() + getFlightTimingDayOffset(flight, source));
+  return fallbackEnd;
 }
 function findEtmStayAdjacentFlights(month, stayFlight){
   if (!routeIsStay(stayFlight?.route)) return { prevFlight: null, nextFlight: null };
@@ -4233,10 +4266,8 @@ function calculateEtmStayPayOverride(month, stayFlight){
   if (!routeIsStay(stayFlight?.route)) return '';
   const { prevFlight, nextFlight } = findEtmStayAdjacentFlights(month, stayFlight);
   if (!prevFlight || !nextFlight) return '';
-  const prevArrivalTime = getFlightArrivalTimeForLogic(prevFlight);
-  const nextDepartureTime = getFlightDepartureTimeForLogic(nextFlight);
-  const prevArrivalDateTime = buildFlightDateTime(month.monthName, prevFlight.date, prevArrivalTime);
-  const nextDepartureDateTime = buildFlightDateTime(month.monthName, nextFlight.date, nextDepartureTime);
+  const prevArrivalDateTime = getFlightTimelineBounds(month.monthName, prevFlight).endDateTime;
+  const nextDepartureDateTime = getFlightTimelineBounds(month.monthName, nextFlight).startDateTime;
   if (!prevArrivalDateTime || !nextDepartureDateTime) return '';
   const stayMinutes = Math.max(0, Math.round((nextDepartureDateTime.getTime() - prevArrivalDateTime.getTime()) / 60000));
   if (stayMinutes <= 0) return '';
@@ -4509,6 +4540,7 @@ function ensureFlightShape(f){
   f.parts = {};
   Object.keys(defaults).forEach(k => { f.parts[k] = normalizeFlightPartValue(k, incomingParts[k], defaults[k]); });
   f.dep1 ||= ''; f.arr1 ||= ''; f.dep2 ||= ''; f.arr2 ||= ''; f.dep3 ||= ''; f.arr3 ||= ''; f.dep4 ||= ''; f.arr4 ||= ''; f.block ||= '00:00'; f.manualBlock ||= '';
+  f.executionNextDay = !!f.executionNextDay;
   f.crewContact = String(f.crewContact || '').trim();
   f.takeoffs = /^\d{1,2}$/.test(String(f.takeoffs || '').trim()) ? String(f.takeoffs).trim() : '';
   f.landings = /^\d{1,2}$/.test(String(f.landings || '').trim()) ? String(f.landings).trim() : '';
@@ -5017,6 +5049,7 @@ function readFlightTechValues(flightId){
     arr3: String(document.getElementById(`tech-arr3-${flightId}`)?.value||'').trim(),
     dep4: String(document.getElementById(`tech-dep4-${flightId}`)?.value||'').trim(),
     arr4: String(document.getElementById(`tech-arr4-${flightId}`)?.value||'').trim(),
+    executionNextDay: !!document.getElementById(`tech-execution-next-day-${flightId}`)?.checked,
     sequenceNumber: String(document.getElementById(`tech-sequence-${flightId}`)?.value||'').trim()
   };
 }
@@ -5053,6 +5086,7 @@ function syncFlightBlockFromTechInputs(monthName, flightId){
   flight.arr3 = values.arr3;
   flight.dep4 = values.dep4;
   flight.arr4 = values.arr4;
+  flight.executionNextDay = values.executionNextDay;
   if (isMobileViewport()) {
     applyTechTimeValuesToInputs(flightId, values);
     return;
@@ -5102,6 +5136,7 @@ function updateFlightTech(monthName, flightId){
   flight.arr3 = values.arr3;
   flight.dep4 = values.dep4;
   flight.arr4 = values.arr4;
+  flight.executionNextDay = values.executionNextDay;
   if (usesMonthlySequenceOrdering(monthName)) flight.sequenceNumber = Number(sequenceRaw);
   recalcMonthFromFlightChange(month);
   render();
@@ -5227,7 +5262,13 @@ function renderTechEditor(monthName,f){
         </div>
         <div class="mobile-change-field">${renderTechChangeField(f)}</div>
       </div>
-      <div class="k flight-tech-title tech-subtitle">ביצוע</div>
+      <div class="tech-execution-header">
+        <div class="k flight-tech-title tech-subtitle">ביצוע</div>
+        <label class="tech-next-day-label">
+          <input id="tech-execution-next-day-${f.id}" type="checkbox" ${f.executionNextDay ? 'checked' : ''}>
+          <span>+ יום</span>
+        </label>
+      </div>
       <div class="tech-grid tech-time-grid">
         ${renderTechTimeField('המראה 1', `tech-dep1-${f.id}`, f.dep1 || '', monthName, f.id)}
         ${renderTechTimeField('נחיתה 1', `tech-arr1-${f.id}`, f.arr1 || '', monthName, f.id)}
@@ -5413,7 +5454,7 @@ function isLogbookEligibleRoute(route){
   return !!r && !['stay','sby','sic','vec','canc','mil'].includes(r);
 }
 function flightDatePassedForLogbook(flight, monthName){
-  const iso = dateToInputValue(flight.date, monthName);
+  const iso = getFlightEffectiveIsoDate(monthName, flight);
   if (!iso) return false;
   const flightDate = new Date(iso + 'T00:00:00');
   const today = new Date();
@@ -5568,7 +5609,8 @@ function buildPayrollLogbookBaseRows(){
   model.months.forEach(month => {
     (month.flights || []).forEach(flight => {
       ensureFlightShape(flight);
-      const isoDate = dateToInputValue(flight.date, month.monthName) || '';
+      const scheduledIsoDate = dateToInputValue(flight.date, month.monthName) || '';
+      const isoDate = getFlightEffectiveIsoDate(month.monthName, flight) || scheduledIsoDate;
       if (!isPayrollLogbookRowInActiveRange(isoDate)) return;
       if (!flightDatePassedForLogbook(flight, month.monthName)) return;
       if (!isLogbookEligibleRoute(flight.route)) return;
@@ -5582,6 +5624,7 @@ function buildPayrollLogbookBaseRows(){
         isPayrollRow: true,
         serial: '',
         date: isoDate,
+        route: String(flight.route || '').trim(),
         type: getLogbookType(flight.route),
         aircraft: String(flight.aircraft || '').trim(),
         dep: meta.dep || '',
@@ -5638,6 +5681,7 @@ function buildLogbookRows(){
       serial: baseRow.serial || '',
       date: baseRow.date || '',
       dateObj: logbookDateObject(baseRow.date || ''),
+      route: baseRow.route || '',
       type: baseRow.type || '',
       aircraft: baseRow.aircraft || '',
       dep: baseRow.dep || '',
@@ -5862,7 +5906,8 @@ function buildLogbookSummary(rows){
   const inRange = (row, start) => eligible(row) && row.dateObj.getTime() >= start.getTime() && row.dateObj.getTime() <= today.getTime();
   const inThisMonth = row => eligible(row) && row.dateObj.getTime() >= monthStart.getTime() && row.dateObj.getTime() <= today.getTime();
   const arkiaMinutes = sumBlockMinutes(rows, eligible);
-  const last28Minutes = sumBlockMinutes(rows, row => inRange(row, start28));
+  // FTL 100h/28d is based on actual flight block only; exclude standby, SIM and DH rows.
+  const last28Minutes = sumBlockMinutes(rows, row => inRange(row, start28) && isFtl28EligibleLogbookRow(row));
   const last365Minutes = sumBlockMinutes(rows, row => inRange(row, start365));
   return {
     totalHours: toHHMM(LOGBOOK_TOTAL_BASE_MINUTES + arkiaMinutes),
@@ -5880,6 +5925,10 @@ function buildLogbookSummary(rows){
 function isFtl28EligibleLogbookRow(row){
   if (!row) return false;
   if (containsDhNote(row.rem || '')) return false;
+  const routeKey = normalizeRouteKey(row.route || '');
+  const typeKey = normalizeRouteKey(row.type || '');
+  if (['sby', 'standby', 'סטנדביי', 'כוננות'].includes(routeKey)) return false;
+  if (['sby', 'standby', 'סטנדביי', 'כוננות'].includes(typeKey)) return false;
   if (/^sim\b/i.test(String(row.type || '').trim())) return false;
   return toMinutes(row.block || '00:00') > 0;
 }
@@ -5923,7 +5972,7 @@ function buildPayrollFlightFtl28LimitMap(){
       ensureFlightShape(flight);
       const route = String(flight.route || '').trim();
       if (!routeIsActivity(route) || containsDhNote(flight.note)) return;
-      const isoDate = dateToInputValue(flight.date, month.monthName);
+      const isoDate = getFlightEffectiveIsoDate(month.monthName, flight);
       if (!isoDate) return;
       const blockMinutes = getEffectiveBlockMinutes(flight);
       if (blockMinutes <= 0) return;
@@ -6768,7 +6817,7 @@ function renderLogbook(){
   const last28Progress = Math.max(0, Math.min(100, (summary.last28Minutes / (100 * 60)) * 100));
   const last365Progress = Math.max(0, Math.min(100, (summary.last365Minutes / (1000 * 60)) * 100));
   const ftlSummaryItems = [
-    { label: '100ש 28 יום', value: summary.last28, note: '', alert: summary.last28Minutes > (90 * 60), progress: last28Progress },
+    { label: '100ש 28 יום', value: summary.last28, note: 'שעות בלוק בלבד', alert: summary.last28Minutes > (90 * 60), progress: last28Progress },
     { label: '1000ש 365 יום', value: summary.last365, note: '', alert: summary.last365Minutes > (950 * 60), progress: last365Progress },
     { label: 'נחיתות ב90 יום', value: String(summary.landings90), note: '' },
     { label: 'המראות ב90 יום', value: String(summary.takeoffs90), note: '' }
@@ -7548,6 +7597,90 @@ function applyImportedMarch2026Data(){
 }
 
 applyImportedMarch2026Data();
+const IMPORTED_AUGUST_2026_CREWCONNEX_FLIGHTS = [
+  { id:'ccx-2026-08-01', row:'CCX-01', date:'01.08', route:'tlv ath tlv', dep1:'18:15', arr1:'20:25', dep2:'21:55', arr2:'23:50' },
+  { id:'ccx-2026-08-02', row:'CCX-02', date:'02.08', route:'tlv bcn tlv', dep1:'14:30', arr1:'19:10', dep2:'20:40', arr2:'00:50' },
+  { id:'ccx-2026-08-03', row:'CCX-03', date:'03.08', route:'sby', dep1:'12:00', arr1:'23:59', dep2:'', arr2:'' },
+  { id:'ccx-2026-08-04', row:'CCX-04', date:'04.08', route:'tlv agp tlv', dep1:'12:35', arr1:'18:00', dep2:'19:25', arr2:'00:10' },
+  { id:'ccx-2026-08-06', row:'CCX-05', date:'06.08', route:'tlv bcn tlv', dep1:'14:30', arr1:'19:10', dep2:'20:40', arr2:'00:50' },
+  { id:'ccx-2026-08-09', row:'CCX-06', date:'09.08', route:'tlv jmk tlv', dep1:'05:40', arr1:'07:35', dep2:'08:35', arr2:'10:20' },
+  { id:'ccx-2026-08-10', row:'CCX-07', date:'10.08', route:'tlv gva tlv', dep1:'14:15', arr1:'18:35', dep2:'20:05', arr2:'00:05' },
+  { id:'ccx-2026-08-12', row:'CCX-08', date:'12.08', route:'tlv ath tlv', dep1:'16:00', arr1:'18:10', dep2:'20:10', arr2:'22:05' },
+  { id:'ccx-2026-08-13', row:'CCX-09', date:'13.08', route:'sby', dep1:'11:00', arr1:'23:00', dep2:'', arr2:'' },
+  { id:'ccx-2026-08-15', row:'CCX-10', date:'15.08', route:'tlv bcn tlv', dep1:'15:35', arr1:'20:15', dep2:'21:55', arr2:'02:10' }
+];
+const BUILT_IN_IMPORT_AUGUST_2026_CREWCONNEX_VERSION = 'built-in-august-2026-crewconnex-v1';
+function makePlannedImportedFlight(cfg){
+  const f = makeFlight(cfg.id, cfg.row, cfg.date, cfg.route, '', '', '', '', cfg.aircraft || '', cfg.note || '');
+  f.dep3 = cfg.dep1 || '';
+  f.arr3 = cfg.arr1 || '';
+  f.dep4 = cfg.dep2 || '';
+  f.arr4 = cfg.arr2 || '';
+  f.subtitle = computeSubtitle(cfg.route);
+  updateFlightDerived(f);
+  return f;
+}
+function importedFlightMatchesConfig(flight, cfg){
+  ensureFlightShape(flight);
+  return String(flight?.date || '').trim() === String(cfg.date || '').trim()
+    && normalizeRouteKey(flight?.route || '') === normalizeRouteKey(cfg.route || '')
+    && String(flight?.dep3 || '').trim() === String(cfg.dep1 || '').trim()
+    && String(flight?.arr3 || '').trim() === String(cfg.arr1 || '').trim()
+    && String(flight?.dep4 || '').trim() === String(cfg.dep2 || '').trim()
+    && String(flight?.arr4 || '').trim() === String(cfg.arr2 || '').trim();
+}
+function getBuiltInImportStorageKey(version){
+  return `arkia-built-in-import:${String(CLOUD_APP_ID || 'arkia-pay-main')}:${String(version || '').trim()}`;
+}
+function hasBuiltInImportApplied(version){
+  try {
+    return localStorage.getItem(getBuiltInImportStorageKey(version)) === '1';
+  } catch (err) {
+    return false;
+  }
+}
+function markBuiltInImportApplied(version){
+  try {
+    localStorage.setItem(getBuiltInImportStorageKey(version), '1');
+  } catch (err) {
+    console.warn('Failed to persist built-in import flag', err);
+  }
+}
+function applyImportedAugust2026CrewConnexData(){
+  const monthName = 'אוגוסט 2026';
+  let month = model.months.find(m => m.monthName === monthName);
+  if (!month) {
+    month = {monthName,eshelDays:0,eshelUsd:0,flightsCount:0,activityDays:0,standbyDays:0,miluimDays:0,baseHours:'00:00',finalSalaryIls:getEffectiveMinimumEmploymentIls(monthName),flights:[]};
+    model.months.push(month);
+    model.months.sort((a,b) => monthSortKey(b.monthName) - monthSortKey(a.monthName));
+    month = model.months.find(m => m.monthName === monthName) || month;
+  }
+  let changed = false;
+  IMPORTED_AUGUST_2026_CREWCONNEX_FLIGHTS.forEach(cfg => {
+    const exists = (month.flights || []).some(flight => String(flight?.id || '') === String(cfg.id))
+      || (month.flights || []).some(flight => importedFlightMatchesConfig(flight, cfg));
+    if (exists) return;
+    const flight = makePlannedImportedFlight(cfg);
+    if (usesMonthlySequenceOrdering(month.monthName)) {
+      const insertionInfo = getMonthSequenceInsertionInfo(month, dateToInputValue(flight.date, month.monthName));
+      if (insertionInfo?.targetSequenceNumber) insertFlightIntoMonthSequence(month, flight, insertionInfo.targetSequenceNumber);
+      else flight.sequenceNumber = getNextMonthSequenceNumber(month);
+    }
+    month.flights.push(flight);
+    ui.openFlights[flight.id] = false;
+    changed = true;
+  });
+  if (!changed) return false;
+  ui.openMonths[monthName] = true;
+  recalcMonthFromFlightChange(month);
+  return true;
+}
+function applyBuiltInRosterImports(){
+  if (hasBuiltInImportApplied(BUILT_IN_IMPORT_AUGUST_2026_CREWCONNEX_VERSION)) return false;
+  const changed = applyImportedAugust2026CrewConnexData();
+  markBuiltInImportApplied(BUILT_IN_IMPORT_AUGUST_2026_CREWCONNEX_VERSION);
+  return changed;
+}
 function deepClone(value){ return JSON.parse(JSON.stringify(value)); }
 function getSystemBackupVersion(){ return 'v139'; }
 function setSystemAdminStatus(message, isError){
@@ -7872,7 +8005,9 @@ async function bootCloud(){
   if (cloud.booted) return;
   cloud.booted = true;
   await loadFromCloud();
-  if (!cloud.loadedAtLeastOnce) await saveToCloud();
+  const builtInImportChanged = applyBuiltInRosterImports();
+  if (builtInImportChanged) render();
+  if (!cloud.loadedAtLeastOnce || builtInImportChanged) await saveToCloud();
 }
 window.addEventListener('online', () => {
   if (!cloud.booted) return;
