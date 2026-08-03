@@ -1931,9 +1931,8 @@ color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto
       <div class="form-card">
         <div class="actions" style="margin-top:0">
           <button class="btn primary" type="button" onclick="toggleNewFlightForm()" id="newFlightToggleBtn">צור פעילות חדשה</button>
-          <button class="btn primary" type="button" onclick="triggerHilanImport()">יבוא קובץ זמנים</button>
-          <input type="file" id="hilanImportInput" accept=".htm,.html,.xlsx,.xltx" style="display:none" onchange="handleHilanImportFile(this)">
-          <input type="file" id="hilanImportCompanionInput" accept=".htm,.html" style="display:none" onchange="handleHilanImportCompanionFile(this)">
+          <button class="btn primary" type="button" onclick="triggerFlightPdfImport()">יבוא קובץ נתונים</button>
+          <input type="file" id="flightPdfImportDirectoryInput" accept="application/pdf,.pdf" webkitdirectory directory multiple style="display:none" onchange="handleFlightPdfImportDirectoryFiles(this)">
         </div>
         <div id="newFlightFormWrap" class="collapsed action-popover" style="margin-top:12px">
           <div class="form-grid">
@@ -2041,7 +2040,7 @@ color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto
       <div id="masterDataMount"></div>
     </div>
   </div>
-  <div class="app-version-footer">גרסה 181.334</div>
+  <div class="app-version-footer">גרסה 181.340</div>
 </div>
 
 <datalist id="routeOptionsList">
@@ -2197,6 +2196,7 @@ color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
+<script src="./pdf.min.js"></script>
 <script>
 const ui = { editing: null, drafts: {}, openMonths: {}, openFlights: {}, newMonthFormOpen: false, newFlightFormOpen: false, screen: 'payroll', masterDataDraft: null, masterDataDirty: false, masterDataOpen: {}, masterDataDrag: null, masterDataDragOver: null };
 const model = {
@@ -8005,9 +8005,7 @@ async function bootCloud(){
   if (cloud.booted) return;
   cloud.booted = true;
   await loadFromCloud();
-  const builtInImportChanged = applyBuiltInRosterImports();
-  if (builtInImportChanged) render();
-  if (!cloud.loadedAtLeastOnce || builtInImportChanged) await saveToCloud();
+  if (!cloud.loadedAtLeastOnce) await saveToCloud();
 }
 window.addEventListener('online', () => {
   if (!cloud.booted) return;
@@ -8129,6 +8127,264 @@ window.addEventListener('DOMContentLoaded', () => {
 window.addEventListener('pageshow', () => {
   cacheCurrentOfflineEntry();
 });
+
+
+const FLIGHT_PDF_IMPORT_DIRECTORY_NAME='קבצים לעדכון נתוני טיסות';
+const FLIGHT_PDF_DIRECTORY_DB='arkia-flight-pdf-directory-handles';
+function getFlightPdfDirectoryHandleKey(){ return String(CLOUD_APP_ID||'arkia-pay-main')+':directory'; }
+function openFlightPdfDirectoryDb(){
+  return new Promise((resolve,reject)=>{
+    const request=indexedDB.open(FLIGHT_PDF_DIRECTORY_DB,1);
+    request.onupgradeneeded=()=>{ if(!request.result.objectStoreNames.contains('handles')) request.result.createObjectStore('handles'); };
+    request.onsuccess=()=>resolve(request.result); request.onerror=()=>reject(request.error);
+  });
+}
+async function readSavedFlightPdfDirectoryHandle(){
+  try{ const db=await openFlightPdfDirectoryDb(); return await new Promise((resolve,reject)=>{ const request=db.transaction('handles','readonly').objectStore('handles').get(getFlightPdfDirectoryHandleKey()); request.onsuccess=()=>resolve(request.result||null); request.onerror=()=>reject(request.error); }); }
+  catch(err){ console.warn('Failed to read PDF directory handle',err); return null; }
+}
+async function saveFlightPdfDirectoryHandle(handle){
+  try{ const db=await openFlightPdfDirectoryDb(); await new Promise((resolve,reject)=>{ const request=db.transaction('handles','readwrite').objectStore('handles').put(handle,getFlightPdfDirectoryHandleKey()); request.onsuccess=()=>resolve(); request.onerror=()=>reject(request.error); }); }
+  catch(err){ console.warn('Failed to save PDF directory handle',err); }
+}
+async function ensureFlightPdfDirectoryPermission(handle){
+  if(!handle) return false;
+  try{ if(typeof handle.queryPermission==='function'&&(await handle.queryPermission({mode:'read'}))==='granted') return true; if(typeof handle.requestPermission==='function') return (await handle.requestPermission({mode:'read'}))==='granted'; }
+  catch(err){ return false; }
+  return false;
+}
+async function selectFlightPdfDirectoryHandle(){
+  const handle=await window.showDirectoryPicker({id:'arkia-flight-pdf-import',mode:'read',startIn:'desktop'});
+  if(String(handle?.name||'')!==FLIGHT_PDF_IMPORT_DIRECTORY_NAME) throw new Error('יש לבחור את התיקייה בשם „'+FLIGHT_PDF_IMPORT_DIRECTORY_NAME+'”.');
+  await saveFlightPdfDirectoryHandle(handle); return handle;
+}
+async function getLatestPdfFromDirectoryHandle(handle){
+  const files=[];
+  for await(const entry of handle.values()){
+    if(entry.kind!=='file'||!/\.pdf$/i.test(String(entry.name||''))) continue;
+    const file=await entry.getFile(); files.push(file);
+  }
+  files.sort((a,b)=>(Number(b.lastModified||0)-Number(a.lastModified||0))||String(b.name).localeCompare(String(a.name)));
+  return files[0]||null;
+}
+async function triggerFlightPdfImport(){
+  if(typeof window.showDirectoryPicker!=='function'){
+    const fallback=document.getElementById('flightPdfImportDirectoryInput'); if(fallback){ fallback.value=''; fallback.click(); } return;
+  }
+  try{
+    let handle=await readSavedFlightPdfDirectoryHandle();
+    if(!handle||String(handle.name||'')!==FLIGHT_PDF_IMPORT_DIRECTORY_NAME||!(await ensureFlightPdfDirectoryPermission(handle))) handle=await selectFlightPdfDirectoryHandle();
+    const latestFile=await getLatestPdfFromDirectoryHandle(handle);
+    if(!latestFile) throw new Error('לא נמצאו קובצי PDF בתיקייה „'+FLIGHT_PDF_IMPORT_DIRECTORY_NAME+'”.');
+    await importFlightPdfFile(latestFile,null);
+  }catch(err){ if(err?.name==='AbortError') return; alert(String(err?.message||err||'לא ניתן לקרוא את תיקיית קובצי העדכון.')); }
+}
+async function handleFlightPdfImportDirectoryFiles(inputEl){
+  const files=Array.from(inputEl?.files||[]).filter(file=>/\.pdf$/i.test(String(file.name||'')));
+  try{
+    if(!files.length) throw new Error('לא נמצאו קובצי PDF בתיקייה שנבחרה.');
+    const relativePath=String(files[0]?.webkitRelativePath||'');
+    const rootName=relativePath.split('/')[0]||'';
+    if(rootName&&rootName!==FLIGHT_PDF_IMPORT_DIRECTORY_NAME) throw new Error('יש לבחור את התיקייה בשם „'+FLIGHT_PDF_IMPORT_DIRECTORY_NAME+'”.');
+    files.sort((a,b)=>(Number(b.lastModified||0)-Number(a.lastModified||0))||String(b.name).localeCompare(String(a.name)));
+    await importFlightPdfFile(files[0],inputEl);
+  }catch(err){ alert(String(err?.message||err||'לא ניתן לקרוא את תיקיית קובצי העדכון.')); }
+  finally{ if(inputEl) inputEl.value=''; }
+}
+function normalizePdfImportText(value){
+  return String(value || '').toLowerCase().replace(/[–—−]/g, '-').replace(/[^a-z0-9א-ת]+/g, ' ').replace(/\s+/g, ' ').trim();
+}
+function compactPdfImportText(value){ return normalizePdfImportText(value).replace(/\s+/g, ''); }
+function getPdfImportKnownRoutes(){
+  const routes = new Set();
+  (Array.isArray(ROUTE_OPTIONS) ? ROUTE_OPTIONS : []).forEach(route => routes.add(String(route || '').trim()));
+  (model.months || []).forEach(month => (month.flights || []).forEach(flight => routes.add(String(flight?.route || '').trim())));
+  return Array.from(routes).filter(Boolean).sort((a,b) => compactPdfImportText(b).length - compactPdfImportText(a).length);
+}
+function detectPdfImportRoute(rawText){
+  const normalized = normalizePdfImportText(rawText);
+  const compact = compactPdfImportText(rawText);
+  const aliases = [
+    { tests:['כוננות','standby','sby'], route:'sby' }, { tests:['סימולטור','simulator','sim'], route:'sim' },
+    { tests:['חופשה','vacation','vec'], route:'vec' }, { tests:['מילואים','mil'], route:'MIL' },
+    { tests:['מחלה','sick','sic'], route:'SIC' }, { tests:['יום הדרכה','הדרכה','training'], route:'יום הדרכה' },
+    { tests:['שהייה','שהיה','stay'], route:'stay' }
+  ];
+  for (const alias of aliases) {
+    if (alias.tests.some(test => normalized.split(' ').includes(normalizePdfImportText(test)) || normalized.includes(normalizePdfImportText(test)))) return alias.route;
+  }
+  for (const route of getPdfImportKnownRoutes()) {
+    const routeCompact = compactPdfImportText(route);
+    if (routeCompact && compact.includes(routeCompact)) return route;
+  }
+  const airportTokens = String(rawText || '').toUpperCase().match(/\b[A-Z]{3}\b/g) || [];
+  if (airportTokens.length >= 2) return airportTokens.map(token => token.toLowerCase()).join(' ');
+  return '';
+}
+function parsePdfImportDate(rawText, fallbackYear){
+  const match = String(rawText || '').match(/\b(\d{1,2})[.\/-](\d{1,2})(?:[.\/-](\d{2,4}))?\b/);
+  if (!match) return '';
+  let year = match[3] ? Number(match[3]) : Number(fallbackYear || new Date().getFullYear());
+  if (year < 100) year += 2000;
+  const day = Number(match[1]); const month = Number(match[2]);
+  if (!day || day > 31 || !month || month > 12 || year < 2000) return '';
+  return String(year) + '-' + pad2(month) + '-' + pad2(day);
+}
+function parseCrewRosterDateToken(rawText){
+  const match=String(rawText||'').trim().match(/^(\d{1,2})([A-Za-z]{3})(\d{2,4})$/);
+  if(!match)return '';
+  const monthIndex={jan:1,feb:2,mar:3,apr:4,may:5,jun:6,jul:7,aug:8,sep:9,oct:10,nov:11,dec:12}[match[2].toLowerCase()];
+  let year=Number(match[3]);if(year<100)year+=2000;
+  const day=Number(match[1]);
+  return monthIndex&&day>=1&&day<=31&&year>=2000?String(year)+'-'+pad2(monthIndex)+'-'+pad2(day):'';
+}
+function normalizeCrewRosterClock(rawText){
+  const match=String(rawText||'').match(/^(\d{2})(\d{2})(?:\+\d+)?$/);
+  if(!match)return '';
+  const hour=Number(match[1]);const minute=Number(match[2]);
+  return hour<=23&&minute<=59?pad2(hour)+':'+pad2(minute):'';
+}
+function parseCrewRosterPdfActivities(textRows){
+  const rows=Array.isArray(textRows)?textRows.map(row=>String(row||'').replace(/\s+/g,' ').trim()).filter(Boolean):[];
+  if(!rows.some(row=>/\bCrew\s+Roster\s+Report\b/i.test(row))&&!rows.some(row=>/\bPeriod:\s*\d{1,2}[A-Za-z]{3}\d{2,4}/i.test(row)))return [];
+  const groups=[];let active=null;
+  rows.forEach(line=>{
+    const dateMatch=line.match(/\b(\d{1,2}[A-Za-z]{3}\d{2,4})\b/);
+    const rowDate=dateMatch?parseCrewRosterDateToken(dateMatch[1]):'';
+    if(rowDate){if(active)groups.push(active);active={isoDate:rowDate,lines:[]};}
+    if(active)active.lines.push(line);
+  });
+  if(active)groups.push(active);
+  return groups.map((group,index)=>{
+    const legs=[];const seen=new Set();
+    group.lines.forEach(line=>{
+      const legMatch=line.match(/(?:\b\d{1,2}[A-Za-z]{3}\d{2,4}\b\s+)?(?:\d{4}(?:\+\d+)?\s+)?([A-Z0-9]{2,3}\d{2,4})\s+([A-Z]{3})\s+(\d{4}(?:\+\d+)?)\s+([A-Z]{3})\s+(\d{4}(?:\+\d+)?)/i);
+      if(!legMatch)return;
+      const leg={flightNo:legMatch[1].toUpperCase(),from:legMatch[2].toLowerCase(),std:normalizeCrewRosterClock(legMatch[3]),to:legMatch[4].toLowerCase(),sta:normalizeCrewRosterClock(legMatch[5])};
+      const signature=[leg.flightNo,leg.from,leg.std,leg.to,leg.sta].join('|');
+      if(!leg.std||!leg.sta||seen.has(signature))return;
+      seen.add(signature);legs.push(leg);
+    });
+    if(!legs.length)return null;
+    const airports=[legs[0].from].concat(legs.map(leg=>leg.to));const times=[];
+    legs.forEach(leg=>times.push(leg.std,leg.sta));
+    return {key:group.isoDate+'-'+index,isoDate:group.isoDate,route:airports.join(' '),times:times.slice(0,4),rawText:group.lines.join(' ')};
+  }).filter(Boolean);
+}
+function parsePdfImportActivities(textRows){
+  const rows = Array.isArray(textRows) ? textRows.map(row => String(row || '').trim()).filter(Boolean) : [];
+  const crewRosterRows=parseCrewRosterPdfActivities(rows);
+  if(crewRosterRows.length)return crewRosterRows;
+  const allText = rows.join(' '); const fullYearMatch = allText.match(/\b(20\d{2})\b/);
+  const fallbackYear = fullYearMatch ? Number(fullYearMatch[1]) : new Date().getFullYear();
+  const records = []; let active = null;
+  rows.forEach(line => {
+    const isoDate = parsePdfImportDate(line, fallbackYear);
+    if (isoDate) { if (active) records.push(active); active = { isoDate, text: line }; }
+    else if (active) active.text += ' ' + line;
+  });
+  if (active) records.push(active);
+  return records.map((record, index) => {
+    const times = record.text.match(/\b(?:[01]?\d|2[0-3]):[0-5]\d\b/g) || [];
+    const normalizedTimes = times.map(time => { const parts = time.split(':'); return pad2(Number(parts[0])) + ':' + parts[1]; });
+    return { key: record.isoDate + '-' + index, isoDate: record.isoDate, route: detectPdfImportRoute(record.text), times: normalizedTimes.slice(0,4), rawText: record.text };
+  }).filter(row => row.isoDate && row.route && row.times.length >= 2);
+}
+async function extractFlightPdfTextRows(file){
+  if (!window.pdfjsLib?.getDocument) throw new Error('רכיב קריאת ה-PDF לא נטען. יש להתחבר לאינטרנט ולרענן את האפליקציה.');
+  window.pdfjsLib.GlobalWorkerOptions.workerSrc = new URL('./pdf.worker.min.js', window.location.href).href;
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  const pdf = await window.pdfjsLib.getDocument({ data: bytes }).promise; const result = [];
+  for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber += 1) {
+    const page = await pdf.getPage(pageNumber); const content = await page.getTextContent(); const lines = [];
+    (content.items || []).forEach(item => {
+      const text = String(item?.str || '').trim(); const x = Number(item?.transform?.[4] || 0); const y = Number(item?.transform?.[5] || 0);
+      if (!text) return; let line = lines.find(candidate => Math.abs(candidate.y-y) <= 2.5);
+      if (!line) { line = { y, items:[] }; lines.push(line); } line.items.push({ x, text });
+    });
+    lines.sort((a,b) => b.y-a.y).forEach(line => { const joined = line.items.sort((a,b) => a.x-b.x).map(item => item.text).join(' ').replace(/\s+/g,' ').trim(); if (joined) result.push(joined); });
+  }
+  return result;
+}
+function getLocalTodayIsoDate(){ const today = new Date(); return String(today.getFullYear()) + '-' + pad2(today.getMonth()+1) + '-' + pad2(today.getDate()); }
+function writePdfTimesToExecution(flight, times){
+  ensureFlightShape(flight); const values = Array.isArray(times) ? times.filter(isValidTime).slice(0,4) : [];
+  if (values.length < 2) return false;
+  const before = [flight.dep1,flight.arr1,flight.dep2,flight.arr2].join('|');
+  flight.dep1=values[0]||''; flight.arr1=values[1]||''; flight.dep2=values[2]||''; flight.arr2=values[3]||'';
+  return before !== [flight.dep1,flight.arr1,flight.dep2,flight.arr2].join('|');
+}
+function writePdfTimesToPlanning(flight, times){
+  ensureFlightShape(flight); const values = Array.isArray(times) ? times.filter(isValidTime).slice(0,4) : [];
+  if (values.length < 2) return false;
+  const before = [flight.dep3,flight.arr3,flight.dep4,flight.arr4].join('|');
+  flight.dep3=values[0]||''; flight.arr3=values[1]||''; flight.dep4=values[2]||''; flight.arr4=values[3]||'';
+  return before !== [flight.dep3,flight.arr3,flight.dep4,flight.arr4].join('|');
+}
+function describePdfImportDifference(flight,pdfRow,isPast,isFuture){
+  const timingNote=isPast?' ועדכון זמני הביצוע בפועל?':(isFuture?' ועדכון זמני התכנון בלבד?':'? זמני הפעילות של יום היבוא לא יעודכנו.');
+  return 'נמצא הבדל בפעילות בתאריך '+formatLogbookDateDisplay(pdfRow.isoDate)+':\nבאפליקציה: '+String(flight?.route||'ללא פעילות')+'\nבקובץ PDF: '+String(pdfRow.route||'לא זוהה')+'\n\nלאשר שינוי של הפעילות'+timingNote;
+}
+function createPdfImportMonth(monthName){
+  const month={monthName,eshelDays:0,eshelUsd:0,flightsCount:0,activityDays:0,standbyDays:0,miluimDays:0,baseHours:'00:00',finalSalaryIls:getEffectiveMinimumEmploymentIls(monthName),flights:[]};
+  model.months.push(month); model.months.sort((a,b)=>monthSortKey(b.monthName)-monthSortKey(a.monthName)); ui.openMonths[monthName]=true; return month;
+}
+async function applyFlightPdfImportRows(pdfRows){
+  const todayIso=getLocalTodayIsoDate(); const rows=Array.isArray(pdfRows)?pdfRows:[];
+  let updated=0,unchanged=0,rejected=0,skipped=0; const affectedMonths=new Set();
+  const rowsByDate=rows.reduce((map,row)=>{if(!map.has(row.isoDate))map.set(row.isoDate,[]);map.get(row.isoDate).push(row);return map;},new Map());
+  for(const [isoDate,dateRows] of rowsByDate.entries()){
+    const monthName=monthNameFromInputDate(isoDate); if(!monthName){skipped+=dateRows.length;continue;}
+    let month=model.months.find(item=>item.monthName===monthName)||null;
+    let appRows=month?getFlightsInLogicalSequence(month).filter(flight=>dateToInputValue(flight.date||'',month.monthName)===isoDate):[];
+    for(let index=0;index<dateRows.length;index+=1){
+      const pdfRow=dateRows[index]; const isPast=pdfRow.isoDate<todayIso; const isFuture=pdfRow.isoDate>todayIso; let flight=appRows[index]||null; let created=false;
+      if(!flight){
+        const timingNote=isPast?' זמני הקובץ ייכנסו לביצוע בפועל.':(isFuture?' זמני הקובץ ייכנסו לזמני התכנון בלבד.':' זמני הפעילות של יום היבוא לא יוזנו.');
+        const approved=await requestAppConfirm('בקובץ PDF קיימת פעילות בתאריך '+formatLogbookDateDisplay(pdfRow.isoDate)+' שאינה קיימת באפליקציה:\n'+pdfRow.route+'\n\nלאשר יצירת פעילות חדשה?'+timingNote);
+        if(!approved){rejected+=1;continue;}
+        if(!month)month=createPdfImportMonth(monthName);
+        flight=makeFlight('pdf-'+isoDate.replace(/-/g,'')+'-'+Date.now()+'-'+index,index+1,inputValueToDate(pdfRow.isoDate),pdfRow.route,'','','','');
+        month.flights.push(flight);appRows.push(flight);created=true;
+      }
+      ensureFlightShape(flight);
+      const activityDiffers=normalizeRouteKey(flight.route)!==normalizeRouteKey(pdfRow.route);
+      if(activityDiffers){
+        const approved=await requestAppConfirm(describePdfImportDifference(flight,pdfRow,isPast,isFuture));
+        if(!approved){rejected+=1;continue;}
+        flight.route=pdfRow.route;
+      }
+      const timesChanged=isPast?writePdfTimesToExecution(flight,pdfRow.times):(isFuture?writePdfTimesToPlanning(flight,pdfRow.times):false);
+      if(created||activityDiffers||timesChanged){updated+=1;affectedMonths.add(month.monthName);}else unchanged+=1;
+    }
+    if(month&&appRows.length>dateRows.length){
+      const extraRoutes=appRows.slice(dateRows.length).map(flight=>String(flight.route||'ללא פעילות')).join(', ');
+      alert('בתאריך '+formatLogbookDateDisplay(isoDate)+' קיימות באפליקציה פעילויות שאינן מופיעות ב-PDF:\n'+extraRoutes+'\n\nהפעילויות לא שונו.');
+      skipped+=appRows.length-dateRows.length;
+    }
+  }
+  affectedMonths.forEach(monthName=>{const month=model.months.find(item=>item.monthName===monthName);if(month)recalcMonthFromFlightChange(month);});
+  return {updated,unchanged,rejected,skipped,affectedMonths:affectedMonths.size};
+}
+async function importFlightPdfFile(file,inputEl=null){
+  if(!file) return;
+  const importAppId=String(CLOUD_APP_ID||'');
+  if(!importAppId||importAppId==='arkia-pay-main'){ alert('יש להתחבר למשתמש לפני ייבוא קובץ הנתונים.'); return; }
+  if(String(file.type||'').toLowerCase()!=='application/pdf'&&!/\.pdf$/i.test(String(file.name||''))){ alert('יש לבחור קובץ PDF מתוך התיקייה קבצים לעדכון נתוני טיסות.'); return; }
+  try{
+    const textRows=await extractFlightPdfTextRows(file); const parsedRows=parsePdfImportActivities(textRows);
+    if(!parsedRows.length) throw new Error('לא נמצאו בקובץ פעילויות עם תאריך, סוג פעילות וזמנים מזוהים.');
+    if(String(CLOUD_APP_ID||'')!==importAppId) throw new Error('המשתמש הפעיל השתנה במהלך הייבוא. לא בוצע עדכון.');
+    const result=await applyFlightPdfImportRows(parsedRows);
+    if(result.affectedMonths){ scheduleCloudSave(); render(); }
+    const savedLabel=file.lastModified?new Date(file.lastModified).toLocaleString('he-IL'):'לא ידוע';
+    alert('ייבוא ה-PDF הסתיים.\nקובץ: '+file.name+'\nנשמר לאחרונה: '+savedLabel+'\nעודכנו: '+result.updated+'\nללא שינוי: '+result.unchanged+'\nנדחו באישור המשתמש: '+result.rejected+'\nדולגו (ללא התאמה): '+result.skipped);
+  }catch(err){ alert(String(err?.message||err||'ייבוא קובץ ה-PDF נכשל.')); }
+  finally{ if(inputEl) inputEl.value=''; }
+}
+window.triggerFlightPdfImport=triggerFlightPdfImport;
+window.handleFlightPdfImportDirectoryFiles=handleFlightPdfImportDirectoryFiles;
+window.parsePdfImportActivities=parsePdfImportActivities;
 
 function triggerHilanImport(){
   const input = document.getElementById('hilanImportInput');
