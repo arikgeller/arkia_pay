@@ -2040,7 +2040,7 @@ color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto
       <div id="masterDataMount"></div>
     </div>
   </div>
-  <div class="app-version-footer">גרסה 181.340</div>
+  <div class="app-version-footer">גרסה 181.341</div>
 </div>
 
 <datalist id="routeOptionsList">
@@ -4669,7 +4669,7 @@ function totalByPart(month,key){
 }
 function totalBlock(month){
   return toHHMM(month.flights.reduce((acc,f)=> {
-    if (containsDhNote(f?.note)) return acc;
+    if (!routeIsActivity(f?.route) || containsDhNote(f?.note)) return acc;
     return acc + toMinutes(f?.block || '00:00');
   },0));
 }
