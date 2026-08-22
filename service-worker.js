@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'arkia-shell-v354';
+const CACHE_VERSION = 'arkia-shell-v355';
 
 function getScopeUrl() {
   return self.registration.scope;
