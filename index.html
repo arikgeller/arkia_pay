@@ -2065,7 +2065,7 @@ color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto
       <div id="masterDataMount"></div>
     </div>
   </div>
-  <div class="app-version-footer">גרסה 181.356</div>
+  <div class="app-version-footer">גרסה 181.360</div>
 </div>
 
 <datalist id="routeOptionsList">
@@ -3334,6 +3334,7 @@ const HOLIDAY_WINDOWS = [
   { name:'סוכות א', start:'2033-10-07', end:'2033-10-08' },
   { name:'סוכות ב', start:'2033-10-14', end:'2033-10-15' }
 ];
+const FIRST_HOLIDAY_DOUBLE_ACCELERATOR_NAMES = new Set(['ראש השנה', 'פסח א']);
 const ELECTION_DAY_WINDOWS = [];
 
 function parseDateLabelWithYear(dateLabel, fallbackYear){
@@ -3391,6 +3392,14 @@ function buildHolidayWindowBounds(window){
   const start = new Date(sy, sm - 1, sd, 16, 0, 0, 0);
   const endExclusive = new Date(ey, em - 1, ed + 1, 0, 0, 0, 0);
   return { start, endExclusive };
+}
+function buildFirstHolidayDoubleAcceleratorBounds(window){
+  if(!FIRST_HOLIDAY_DOUBLE_ACCELERATOR_NAMES.has(String(window?.name||'')))return null;
+  const [year,month,day]=String(window?.start||'').split('-').map(Number);
+  if(!year||!month||!day)return null;
+  const start=new Date(year,month-1,day,16,0,0,0);
+  const endExclusive=new Date(year,month-1,day+1,4,0,0,0);
+  return {start,endExclusive};
 }
 function getFlightDateTimeRange(f, monthName){
   const legs = getFlightLegDateTimeRanges(f, monthName);
@@ -4379,6 +4388,12 @@ function getMergedShabbatHolidayWindows(rangeStart, rangeEnd){
   }
   return result;
 }
+function getFirstHolidayDoubleAcceleratorWindows(rangeStart,rangeEnd){
+  return HOLIDAY_WINDOWS
+    .map(buildFirstHolidayDoubleAcceleratorBounds)
+    .filter(Boolean)
+    .filter(bounds=>rangeStart<bounds.endExclusive&&rangeEnd>bounds.start);
+}
 function calculateShabbatMinutesFromActualTimeline(f, monthName){
   const fixMinutes = effectiveFixMinutes(f);
   if (!fixMinutes) return 0;
@@ -4388,6 +4403,7 @@ function calculateShabbatMinutesFromActualTimeline(f, monthName){
   const rangeEnd = legs[legs.length - 1].end;
   const windows = getMergedShabbatHolidayWindows(rangeStart, rangeEnd);
   if (!windows.length) return 0;
+  const doubleAcceleratorWindows=getFirstHolidayDoubleAcceleratorWindows(rangeStart,rangeEnd);
   const totalBlockMinutes = legs.reduce((sum, leg) => sum + Math.max(0, Math.round((leg.end.getTime() - leg.start.getTime()) / 60000)), 0);
   if (!totalBlockMinutes) return 0;
   const blockInsideShabbatMinutes = legs.reduce((sum, leg) => {
@@ -4395,8 +4411,13 @@ function calculateShabbatMinutesFromActualTimeline(f, monthName){
     return sum + overlapMinutes;
   }, 0);
   if (!blockInsideShabbatMinutes) return 0;
-  const shabbatEligibleFixMinutes = (blockInsideShabbatMinutes / totalBlockMinutes) * fixMinutes;
-  return Math.round(shabbatEligibleFixMinutes * 0.5);
+  const blockInsideDoubleAcceleratorMinutes=legs.reduce((sum,leg)=>{
+    const overlapMinutes=doubleAcceleratorWindows.reduce((acc,window)=>acc+getDateRangeOverlapMinutes(leg.start,leg.end,window.start,window.endExclusive),0);
+    return sum+overlapMinutes;
+  },0);
+  const regularAcceleratorFixMinutes=(blockInsideShabbatMinutes/totalBlockMinutes)*fixMinutes*0.5;
+  const additionalDoubleAcceleratorFixMinutes=(blockInsideDoubleAcceleratorMinutes/totalBlockMinutes)*fixMinutes*0.5;
+  return Math.round(regularAcceleratorFixMinutes+additionalDoubleAcceleratorFixMinutes);
 }
 function saturdaySingleLegHelper(f){
   const j = effectiveFixMinutes(f);
@@ -8434,6 +8455,18 @@ function detectCrewRosterNonFlightActivity(rawText){
   }
   return null;
 }
+function parseCrewRosterStayLine(rawText){
+  const match=String(rawText||'').match(/\b(SREST|HOTEL)\s+([A-Z]{3})\s+(\d{4}(?:\+\d+)?)\s+([A-Z]{3})\s+(\d{4}(?:\+\d+)?)/i);
+  if(!match)return null;
+  const start=normalizeCrewRosterClock(match[3]);
+  const end=normalizeCrewRosterClock(match[5]);
+  if(!start||!end)return null;
+  return {
+    kind:match[1].toUpperCase(),
+    location:match[2].toLowerCase(),
+    times:[start,end]
+  };
+}
 function parseCrewRosterPdfActivities(textRows){
   const rows=Array.isArray(textRows)?textRows.map(row=>String(row||'').replace(/\s+/g,' ').trim()).filter(Boolean):[];
   if(!rows.some(row=>/\bCrew\s+Roster\s+Report\b/i.test(row))&&!rows.some(row=>/\bPeriod:\s*\d{1,2}[A-Za-z]{3}\d{2,4}/i.test(row)))return [];
@@ -8446,34 +8479,44 @@ function parseCrewRosterPdfActivities(textRows){
   });
   if(active)groups.push(active);
   return groups.flatMap((group,index)=>{
-    const legs=[];const seen=new Set();
+    const events=[];const seen=new Set();
     group.lines.forEach(line=>{
-      const legMatch=line.match(/(?:\b\d{1,2}[A-Za-z]{3}\d{2,4}\b\s+)?(?:\d{4}(?:\+\d+)?\s+)?([A-Z0-9]{2,3}\d{2,4})\s+([A-Z]{3})\s+(\d{4}(?:\+\d+)?)\s+([A-Z]{3})\s+(\d{4}(?:\+\d+)?)/i);
+      const stayEvent=parseCrewRosterStayLine(line);
+      if(stayEvent){events.push({type:'stay',...stayEvent});return;}
+      const legMatch=line.match(/(?:\b\d{1,2}[A-Za-z]{3}\d{2,4}\b\s+)?(?:\d{4}(?:\+\d+)?\s+)?((?:[A-Z0-9]{2,3}\d{2,4})|DH)\s+([A-Z]{3})\s+(\d{4}(?:\+\d+)?)\s+([A-Z]{3})\s+(\d{4}(?:\+\d+)?)/i);
       if(!legMatch)return;
-      const leg={flightNo:legMatch[1].toUpperCase(),from:legMatch[2].toLowerCase(),std:normalizeCrewRosterClock(legMatch[3]),to:legMatch[4].toLowerCase(),sta:normalizeCrewRosterClock(legMatch[5])};
+      const flightNo=legMatch[1].toUpperCase();
+      const leg={flightNo,dh:flightNo==='DH',from:legMatch[2].toLowerCase(),std:normalizeCrewRosterClock(legMatch[3]),to:legMatch[4].toLowerCase(),sta:normalizeCrewRosterClock(legMatch[5])};
       const signature=[leg.flightNo,leg.from,leg.std,leg.to,leg.sta].join('|');
       if(!leg.std||!leg.sta||seen.has(signature))return;
-      seen.add(signature);legs.push(leg);
+      seen.add(signature);events.push({type:'leg',leg});
     });
     const rawText=group.lines.join(' ');
-    const hasHotel=group.lines.some(line=>/(?:^|\s)HOTEL\s+[A-Z]{3}\b/i.test(line));
-    if(!legs.length){
+    if(!events.length){
       const nonFlight=detectCrewRosterNonFlightActivity(rawText);
       if(nonFlight)return [{key:group.isoDate+'-'+index+'-0',isoDate:group.isoDate,route:nonFlight.route,times:nonFlight.times,rawText}];
-      return hasHotel?[{key:group.isoDate+'-'+index+'-hotel',isoDate:group.isoDate,route:'stay',times:[],rawText}]:[];
+      return [];
     }
-    const activityLegGroups=[];let currentLegs=[];
-    legs.forEach(leg=>{
-      currentLegs.push(leg);
-      if(leg.to==='tlv'||currentLegs.length===2){activityLegGroups.push(currentLegs);currentLegs=[];}
-    });
-    if(currentLegs.length)activityLegGroups.push(currentLegs);
-    const activities=activityLegGroups.map((activityLegs,activityIndex)=>{
+    const activities=[];let currentLegs=[];
+    const flushLegs=()=>{
+      if(!currentLegs.length)return;
+      const activityLegs=currentLegs;currentLegs=[];
       const airports=[activityLegs[0].from].concat(activityLegs.map(leg=>leg.to));const times=[];
       activityLegs.forEach(leg=>times.push(leg.std,leg.sta));
-      return {key:group.isoDate+'-'+index+'-'+activityIndex,isoDate:group.isoDate,route:airports.join(' '),times:times.slice(0,4),rawText};
+      activities.push({key:group.isoDate+'-'+index+'-'+activities.length,isoDate:group.isoDate,route:airports.join(' '),times:times.slice(0,4),dh:activityLegs.every(leg=>leg.dh),rawText});
+    };
+    events.forEach(event=>{
+      if(event.type==='stay'){
+        flushLegs();
+        activities.push({key:group.isoDate+'-'+index+'-'+activities.length,isoDate:group.isoDate,route:'stay',times:event.times,dh:false,stayKind:event.kind,stayLocation:event.location,rawText});
+        return;
+      }
+      const leg=event.leg;
+      if(currentLegs.length&&currentLegs[0].dh!==leg.dh)flushLegs();
+      currentLegs.push(leg);
+      if(leg.to==='tlv'||currentLegs.length===2)flushLegs();
     });
-    if(hasHotel)activities.push({key:group.isoDate+'-'+index+'-hotel',isoDate:group.isoDate,route:'stay',times:[],rawText});
+    flushLegs();
     return activities;
   });
 }
@@ -8577,7 +8620,7 @@ async function applyFlightPdfImportRows(pdfRows){
       }
       if(!flight){
         if(!month)month=createPdfImportMonth(monthName);
-        flight=makeFlight('pdf-'+isoDate.replace(/-/g,'')+'-'+Date.now()+'-'+index,index+1,inputValueToDate(pdfRow.isoDate),pdfRow.route,'','','','');
+        flight=makeFlight('pdf-'+isoDate.replace(/-/g,'')+'-'+Date.now()+'-'+index,index+1,inputValueToDate(pdfRow.isoDate),pdfRow.route,'','','','', '', pdfRow.dh?'DH':'');
         if(usesMonthlySequenceOrdering(monthName)){
           const insertionInfo=getMonthSequenceInsertionInfo(month,pdfRow.isoDate);
           if(insertionInfo?.targetSequenceNumber)insertFlightIntoMonthSequence(month,flight,insertionInfo.targetSequenceNumber);
@@ -8588,9 +8631,15 @@ async function applyFlightPdfImportRows(pdfRows){
       ensureFlightShape(flight);
       const activityDiffers=normalizeRouteKey(flight.route)!==normalizeRouteKey(pdfRow.route);
       if(activityDiffers)flight.route=pdfRow.route;
+      let dhChanged=false;
+      if(Object.prototype.hasOwnProperty.call(pdfRow,'dh')){
+        const desiredNote=pdfRow.dh?'DH':'';
+        dhChanged=String(flight.note||'')!==desiredNote;
+        if(dhChanged)flight.note=desiredNote;
+      }
       const timesChanged=isPast?writePdfTimesToExecution(flight,pdfRow.times):(isFuture?writePdfTimesToPlanning(flight,pdfRow.times):false);
       const sequenceChanged=String(flight?.id||'').startsWith('pdf-')?repositionImportedFlightByDate(month,flight,pdfRow.isoDate):false;
-      if(created||activityDiffers||timesChanged||sequenceChanged){updated+=1;affectedMonths.add(month.monthName);}else unchanged+=1;
+      if(created||activityDiffers||dhChanged||timesChanged||sequenceChanged){updated+=1;affectedMonths.add(month.monthName);}else unchanged+=1;
     }
     if(month&&appRows.length>dateRows.length){
       const extraRoutes=appRows.slice(dateRows.length).map(flight=>String(flight.route||'ללא פעילות')).join(', ');
