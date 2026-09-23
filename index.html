@@ -2065,7 +2065,7 @@ color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto
       <div id="masterDataMount"></div>
     </div>
   </div>
-  <div class="app-version-footer">גרסה 181.362</div>
+  <div class="app-version-footer">גרסה 181.363</div>
 </div>
 
 <datalist id="routeOptionsList">
@@ -3926,8 +3926,62 @@ function updateActivityDateCoverage(coverageMap, monthName, flight, dateKey){
     coverageMap.set(dateKey, overlap.end);
   }
 }
+function getLocalIsoDateKey(dateValue){
+  if (!(dateValue instanceof Date) || Number.isNaN(dateValue.getTime())) return '';
+  return `${dateValue.getFullYear()}-${pad2(dateValue.getMonth() + 1)}-${pad2(dateValue.getDate())}`;
+}
+function getFullCalendarDateKeysBetween(startDateTime, endDateTime){
+  if (!(startDateTime instanceof Date) || !(endDateTime instanceof Date)) return [];
+  if (Number.isNaN(startDateTime.getTime()) || Number.isNaN(endDateTime.getTime())) return [];
+  const cursor = new Date(startDateTime.getFullYear(), startDateTime.getMonth(), startDateTime.getDate() + 1, 0, 0, 0, 0);
+  const endDate = new Date(endDateTime.getFullYear(), endDateTime.getMonth(), endDateTime.getDate(), 0, 0, 0, 0);
+  const dateKeys = [];
+  while (cursor.getTime() < endDate.getTime()) {
+    dateKeys.push(getLocalIsoDateKey(cursor));
+    cursor.setDate(cursor.getDate() + 1);
+  }
+  return dateKeys;
+}
+function buildStayActivityDateAllocation(month, logicalFlights){
+  const allocation = new Map();
+  let activeAwaySequence = null;
+  logicalFlights.forEach(flight => {
+    ensureFlightShape(flight);
+    const routeInfo = analyzeFlightRouteLogic(flight.route);
+    if (routeInfo.isStay) {
+      if (activeAwaySequence) activeAwaySequence.pendingStayFlights.push(flight);
+      return;
+    }
+    if (!routeInfo.isFlight) return;
+    const bounds = getFlightTimelineBounds(month?.monthName || '', flight);
+    if (routeInfo.startsAtBase) {
+      activeAwaySequence = routeInfo.returnsToBase || !bounds.startDateTime
+        ? null
+        : { previousFlightDateTime: bounds.startDateTime, pendingStayFlights: [] };
+      return;
+    }
+    if (!activeAwaySequence) return;
+    const pendingStayFlights = activeAwaySequence.pendingStayFlights;
+    if (pendingStayFlights.length && bounds.endDateTime) {
+      pendingStayFlights.forEach(stayFlight => allocation.set(String(stayFlight.id), []));
+      const finalStay = pendingStayFlights[pendingStayFlights.length - 1];
+      allocation.set(
+        String(finalStay.id),
+        getFullCalendarDateKeysBetween(activeAwaySequence.previousFlightDateTime, bounds.endDateTime)
+      );
+    }
+    if (routeInfo.returnsToBase) {
+      activeAwaySequence = null;
+      return;
+    }
+    if (bounds.startDateTime) activeAwaySequence.previousFlightDateTime = bounds.startDateTime;
+    activeAwaySequence.pendingStayFlights = [];
+  });
+  return allocation;
+}
 function buildActivityDayIncrementMap(month){
   const flights = getFlightsInLogicalSequence(month);
+  const stayActivityDateAllocation = buildStayActivityDateAllocation(month, flights);
   const dayStats = new Map();
   const standbyDayContext = new Map();
   flights.forEach(flight => {
@@ -3981,6 +4035,17 @@ function buildActivityDayIncrementMap(month){
     const stats = dayStats.get(dateKey) || { total: 0, nonStay: 0 };
     const standbyStats = standbyDayContext.get(dateKey) || { hasStandby: false, hasFlightRoute: false, countedStandbyIndex: 0 };
     if (routeKey === 'stay') {
+      if (stayActivityDateAllocation.has(String(flight.id))) {
+        const allocatedDateKeys = stayActivityDateAllocation.get(String(flight.id)) || [];
+        allocatedDateKeys.forEach(stayDateKey => {
+          const stayDateStats = dayStats.get(stayDateKey) || { total: 0, nonStay: 0 };
+          if (stayDateStats.nonStay > 0 || awardedDates.has(stayDateKey)) return;
+          increment += 1;
+          awardedDates.add(stayDateKey);
+        });
+        increments.set(String(flight.id), increment);
+        return;
+      }
       const hasNonStayOnSameDay = stats.nonStay > 0;
       if (!hasNonStayOnSameDay && !awardedDates.has(dateKey)) {
         increment = 1;
