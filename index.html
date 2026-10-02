@@ -2065,7 +2065,7 @@ color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto
       <div id="masterDataMount"></div>
     </div>
   </div>
-  <div class="app-version-footer">גרסה 181.363</div>
+  <div class="app-version-footer">גרסה 181.365</div>
 </div>
 
 <datalist id="routeOptionsList">
@@ -4027,6 +4027,11 @@ function buildActivityDayIncrementMap(month){
       return;
     }
 
+    if (routeHasInstructorMarker(routeKey)) {
+      increments.set(String(flight.id), 1);
+      return;
+    }
+
     if (routeKey === 'sim') {
       increments.set(String(flight.id), 3);
       return;
@@ -4547,11 +4552,16 @@ function calculateShabbatCalc(f, monthName){
   return mins ? toHHMM(mins) : '00:00';
 }
 
+function routeHasInstructorMarker(route){
+  const routeParts = getNormalizedRouteSegments(route);
+  return routeParts.includes('instr') || routeParts.includes('inst');
+}
 function isHoursAccelEligible(f){
   const routeKey = normalizeRouteKey(f?.route);
   if (!String(f?.date || '').trim()) return false;
   if (effectiveFixMinutes(f) <= 0) return false;
   if (!routeKey) return false;
+  if (routeHasInstructorMarker(routeKey)) return true;
   return !['canc','sby','mil','sic','vec','stay','sim','יום הדרכה'].includes(routeKey);
 }
 function calculateHoursBCalc(f, runningEligibleFixBefore){
