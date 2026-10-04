@@ -2065,7 +2065,7 @@ color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto
       <div id="masterDataMount"></div>
     </div>
   </div>
-  <div class="app-version-footer">גרסה 181.365</div>
+  <div class="app-version-footer">גרסה 181.366</div>
 </div>
 
 <datalist id="routeOptionsList">
@@ -3019,6 +3019,7 @@ function getFlightEshelTotalDays(flight){
   ensureFlightShape(flight);
   if (String(flight.manualEshelDays || '').trim() !== '') return Number(flight.manualEshelDays || 0);
   if (normalizeRouteKey(flight.route) === 'sim') return 3;
+  if (routeHasSimulatorMarker(flight.route)) return 1;
   return Number(flight.eshelFlightDays || 0) + Number(flight.eshelStayDays || 0);
 }
 function recomputeMonthEshel(month){
@@ -3809,6 +3810,9 @@ function routeUsesActivityPay(route){
 }
 function getNormalizedRouteSegments(route){
   return normalizeRouteKey(route).split(/\s+/).filter(Boolean);
+}
+function routeHasSimulatorMarker(route){
+  return getNormalizedRouteSegments(route).includes('sim');
 }
 function routeEndsAtEtm(route){
   const parts = getNormalizedRouteSegments(route);
